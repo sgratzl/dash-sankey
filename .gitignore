@@ -275,3 +275,17 @@ GitHub.sublime-settings
 
 
 .vscode
+
+
+# build artifcats
+/dash_sankey/*.js
+/dash_sankey/*.json
+/dash_sankey/*.map
+/deps
+/inst
+/R
+/src/*.jl
+/.Rbuildignore
+/DESCRIPTION
+/NAMESPACE
+/Project.toml

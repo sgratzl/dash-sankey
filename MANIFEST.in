@@ -1,0 +1,7 @@
+include dash_sankey/dash_sankey.min.js
+include dash_sankey/dash_sankey.min.js.map
+include dash_sankey/metadata.json
+include dash_sankey/package-info.json
+include README.md
+include LICENSE
+include package.json

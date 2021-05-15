@@ -1,8 +1,9 @@
 {
   "name": "dash_sankey",
   "version": "0.0.1",
-  "description": "Project Description",
-"repository": {
+  "private": true,
+  "description": "Advanced Sankey Diagram for Dash",
+  "repository": {
     "type": "git",
     "url": "git://github.com/sgratzl/dash-sankey.git"
   },
@@ -10,6 +11,8 @@
     "url": "https://github.com/sgratzl/dash-sankey/issues"
   },
   "homepage": "https://github.com/sgratzl/dash-sankey",
+  "author": "Samuel Gratzl <sam@sgratzl.com>",
+  "license": "Apache-2.0",
   "main": "build/index.js",
   "scripts": {
     "start": "webpack-serve --config ./webpack.serve.config.js --open",
@@ -21,37 +24,44 @@
     "build": "npm run build:js && npm run build:backends",
     "build:activated": "npm run build:js && npm run build:backends-activated"
   },
-  "author": "Samuel Gratzl <sam@sgratzl.com>",
-  "license": "Apache-2.0",
-  "dependencies": {
-    "ramda": "^0.26.1"
+  "dependencies": {},
+  "peerDependencies": {
+    "react": "^16.8.6",
+    "react-dom": "^16.8.6"
   },
   "devDependencies": {
-    "@babel/core": "^7.5.4",
-    "@babel/plugin-proposal-object-rest-spread": "^7.5.4",
-    "@babel/preset-env": "^7.5.4",
-    "@babel/preset-react": "^7.0.0",
+    "@babel/core": "^7.14.0",
+    "@babel/preset-env": "^7.14.1",
+    "@babel/preset-react": "^7.13.13",
+    "@types/react": "^17.0.5",
+    "@types/react-dom": "^17.0.5",
+    "@types/react-loader": "^2.4.4",
+    "@typescript-eslint/eslint-plugin": "^4.22.1",
+    "@typescript-eslint/parser": "^4.22.1",
     "babel-eslint": "^10.0.2",
     "babel-loader": "^8.0.6",
     "copyfiles": "^2.1.1",
     "css-loader": "^3.0.0",
-    "eslint": "^6.0.1",
-    "eslint-config-prettier": "^6.0.0",
-    "eslint-plugin-import": "^2.18.0",
-    "eslint-plugin-react": "^7.14.2",
-    "npm": "^6.1.0",
+    "eslint": "^7.26.0",
+    "eslint-config-airbnb-typescript": "^12.3.1",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-config-react-app": "^6.0.0",
+    "eslint-plugin-flowtype": "^5.7.2",
+    "eslint-plugin-import": "^2.22.1",
+    "eslint-plugin-jsx-a11y": "^6.4.1",
+    "eslint-plugin-prettier": "^3.4.0",
+    "eslint-plugin-react": "^7.23.2",
+    "eslint-plugin-react-hooks": "^4.2.0",
     "prop-types": "^15.7.2",
     "react": "^16.8.6",
-    "react-docgen": "^4.1.1",
+    "react-docgen": "^5.4.0",
     "react-dom": "^16.8.6",
-    "styled-jsx": "^3.2.1",
     "style-loader": "^0.23.1",
+    "styled-jsx": "^3.2.1",
+    "ts-loader": "^8.1.0",
+    "typescript": "^4.2.4",
     "webpack": "4.36.1",
     "webpack-cli": "3.3.6",
     "webpack-serve": "3.1.0"
-  },
-  "engines": {
-    "node": ">=8.11.0",
-    "npm": ">=6.1.0"
   }
 }

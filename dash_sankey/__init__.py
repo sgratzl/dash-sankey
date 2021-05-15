@@ -1,4 +1,4 @@
-from __future__ import print_function as _
+from typing import List
 
 import os as _os
 import sys as _sys
@@ -43,7 +43,7 @@ _js_dist = [
     }
 ]
 
-_css_dist = []
+_css_dist: List[str] = []
 
 
 for _component in __all__:

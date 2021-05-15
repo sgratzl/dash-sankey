@@ -1,5 +1,4 @@
 import json
-import os
 from setuptools import setup
 
 
@@ -19,5 +18,5 @@ setup(
     install_requires=[],
     classifiers = [
         'Framework :: Dash',
-    ],    
+    ],
 )

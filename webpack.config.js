@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 const path = require('path');
 const packagejson = require('./package.json');
 
@@ -23,7 +24,7 @@ module.exports = (env, argv) => {
     mode = 'production';
   }
 
-  let filename = (overrides.output || {}).filename;
+  let { filename } = overrides.output || {};
   if (!filename) {
     const modeSuffix = mode === 'development' ? 'dev' : 'min';
     filename = `${dashLibraryName}.${modeSuffix}.js`;
@@ -56,7 +57,7 @@ module.exports = (env, argv) => {
     externals,
     resolve: {
       // Add `.ts` and `.tsx` as a resolvable extension.
-      extensions: ['.ts', '.tsx', '.js'],
+      extensions: ['.ts', '.tsx', '.js', '.jsx'],
     },
     module: {
       rules: [

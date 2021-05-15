@@ -15,16 +15,25 @@
   "license": "Apache-2.0",
   "main": "build/index.js",
   "scripts": {
+    "compile": "tsc -p tsconfig.json",
     "start": "webpack-serve --config ./webpack.serve.config.js --open",
     "validate-init": "python _validate_init.py",
     "prepublishOnly": "npm run validate-init",
     "build:js": "webpack --mode production",
     "build:backends": "dash-generate-components ./src/lib/components dash_sankey -p package-info.json --r-prefix '' --jl-prefix ''",
     "build:backends-activated": "(. venv/bin/activate || venv\\scripts\\activate && npm run build:py_and_r)",
-    "build": "npm run build:js && npm run build:backends",
-    "build:activated": "npm run build:js && npm run build:backends-activated"
+    "build": "npm run build:js && npm run compile && npm run build:backends",
+    "build:activated": "npm run build:js && npm run compile && npm run build:backends-activated",
+    "lint": "yarn run eslint && yarn run prettier",
+    "fix": "yarn run eslint:fix && yarn run prettier:write",
+    "prettier:write": "prettier \"*\" \"*/**\" --write",
+    "prettier": "prettier \"*\" \"*/**\" --check",
+    "eslint": "eslint src --ext .ts,.tsx",
+    "eslint:fix": "yarn run eslint --fix"
   },
-  "dependencies": {},
+  "dependencies": {
+    "prop-types": "^15.7.2"
+  },
   "peerDependencies": {
     "react": "^16.8.6",
     "react-dom": "^16.8.6"
@@ -52,7 +61,7 @@
     "eslint-plugin-prettier": "^3.4.0",
     "eslint-plugin-react": "^7.23.2",
     "eslint-plugin-react-hooks": "^4.2.0",
-    "prop-types": "^15.7.2",
+    "prettier": "^2.3.0",
     "react": "^16.8.6",
     "react-docgen": "^5.4.0",
     "react-dom": "^16.8.6",

@@ -275,12 +275,15 @@ GitHub.sublime-settings
 
 
 .vscode
+/src/**/*.js
+/src/**/*.map
 
 
 # build artifcats
 /dash_sankey/*.js
 /dash_sankey/*.json
 /dash_sankey/*.map
+/dash_sankey/*.py
 /deps
 /inst
 /R
@@ -289,3 +292,4 @@ GitHub.sublime-settings
 /DESCRIPTION
 /NAMESPACE
 /Project.toml
+/review_checklist.md

@@ -50,6 +50,11 @@ export interface DashReadOnlyLayoutSankeyProps {
    */
   padding?: number;
   /**
+   * offset around line before bending
+   * @default 5
+   */
+  lineOffset?: number;
+  /**
    * sets the number of relaxation iterations when generating the layout and returns this Sankey generator.
    * @default 6
    */
@@ -88,23 +93,32 @@ export type DashSankeyProps = DashReadOnlyLayoutSankeyProps &
     children?: React.ReactNode;
   };
 
-declare type SankeyInternalNode = SankeyNodeImpl<
-  SankeyNode & { fixedValue: number; overlap: OverlapHelper<SankeyID> },
-  { id: string; name: string; overlap: OverlapHelper<SankeyID> }
->;
-declare type SankeyInternalLink = SankeyLinkImpl<
-  SankeyNode & { fixedValue: number; overlap: OverlapHelper<SankeyID> },
-  { id: string; name: string; overlap: OverlapHelper<SankeyID> }
->;
+declare interface SankeyInternalNodeExtras extends SankeyNode {
+  fixedValue: number;
+  overlap: OverlapHelper<SankeyID>;
+  /**
+   * ids that are not part of any outgoing link
+   */
+  missing: OverlapHelper<SankeyID>;
+}
+declare interface SankeyInternalLinkExtras {
+  id: string;
+  name: string;
+  overlap: OverlapHelper<SankeyID>;
+}
+declare type SankeyInternalNode = SankeyNodeImpl<SankeyInternalNodeExtras, SankeyInternalLinkExtras>;
+declare type SankeyInternalLink = SankeyLinkImpl<SankeyInternalNodeExtras, SankeyInternalLinkExtras>;
 
 function extractGraph(levels: readonly SankeyLevel[]) {
   const nodes: SankeyInternalNode[] = [];
   const transformedLevels = levels.map((level) => {
     return level.nodes.map((d) => {
+      const overlap = new OverlapHelper(d.ids);
       const n: SankeyInternalNode = {
         ...d,
-        overlap: new OverlapHelper(d.ids),
+        overlap,
         fixedValue: d.ids.length,
+        missing: overlap.copy(),
       };
       nodes.push(n);
       return n;
@@ -119,6 +133,8 @@ function extractGraph(levels: readonly SankeyLevel[]) {
     for (const lNode of left) {
       for (const rNode of right) {
         const overlap = lNode.overlap.intersect(rNode.overlap);
+        lNode.missing.withoutUpdate(overlap);
+
         if (overlap.isNotEmpty) {
           links.push({
             id: `${lNode.id}-${rNode.id}`,
@@ -138,7 +154,7 @@ function extractGraph(levels: readonly SankeyLevel[]) {
   };
 }
 
-function pathGen(link: SankeyInternalLink, fraction = 1) {
+function pathGen(link: SankeyInternalLink, lineOffset: number, fraction = 1) {
   const base = -link.width! / 2;
   const height = link.width! * fraction;
 
@@ -156,12 +172,35 @@ function pathGen(link: SankeyInternalLink, fraction = 1) {
         y1: link.y0! + base + height,
       },
       {
+        x: (link.source as SankeyInternalNode).x1! + lineOffset,
+        y0: link.y0! + base,
+        y1: link.y0! + base + height,
+      },
+      {
+        x: (link.target as SankeyInternalNode).x0! - lineOffset,
+        y0: link.y1! + base,
+        y1: link.y1! + base + height,
+      },
+      {
         x: (link.target as SankeyInternalNode).x0!,
         y0: link.y1! + base,
         y1: link.y1! + base + height,
       },
     ]) ?? ''
   );
+}
+
+function missingPath(node: SankeyInternalNode, off: number, fraction = 1) {
+  const x = node.x1!;
+  const y1 = node.y1!;
+  const y0 = y1 - (y1 - node.y0!) * (node.missing.size / node.overlap.size);
+  const height = (y1 - y0) * fraction;
+  const width = height;
+  const x1 = x + width;
+
+  const curve1 = `L${x + off},${y0} C${x + off + width / 2},${y0} ${x1},${y1 - off - height / 2} ${x1},${y1 + off}`;
+  const curve2 = `L${x + off},${y1 + off} C${x + off},${y1 + off * 0.5} ${x + off * 0.5},${y1} ${x},${y1}`;
+  return `M${x},${y0} ${curve1} ${curve2} Z`;
 }
 
 function dummy() {
@@ -173,6 +212,7 @@ const DashSankey: FC<DashSankeyProps> = ({
   setProps = dummy,
   height = 300,
   padding = 5,
+  lineOffset = 5,
   iterations = 6,
   nodeAlign = 'justify',
   nodePadding = 8,
@@ -237,7 +277,7 @@ const DashSankey: FC<DashSankeyProps> = ({
             const overlap = selectionOverlap.intersect(link.overlap);
             return (
               <g key={link.id} onClick={select(link.overlap.elems)}>
-                <path d={pathGen(link, 1)} className="dash-sankey-link" />
+                <path d={pathGen(link, lineOffset, 1)} className="dash-sankey-link" />
                 <title>
                   {link.name}: {link.value.toLocaleString()}
                 </title>
@@ -250,7 +290,28 @@ const DashSankey: FC<DashSankeyProps> = ({
               </g>
             );
           })}
+          {layoutGraph.nodes.map((node) => {
+            if (node.missing.isEmpty || node.depth! >= maxDepth) {
+              return null;
+            }
+            const overlap = selectionOverlap.intersect(node.missing);
+            return (
+              <g key={node.id} onClick={select(node.missing)}>
+                <path d={missingPath(node, lineOffset, 1)} className="dash-sankey-link dash-sankey-link__missing" />
+                <title>
+                  {node.name} → ?: {node.missing.length.toLocaleString()}
+                </title>
+                {overlap.isNotEmpty && (
+                  <path
+                    d={missingPath(node, lineOffset, overlap.size / node.missing.size)}
+                    className="dash-sankey-link dash-sankey-link__missing dash-sankey-link__selected"
+                  />
+                )}
+              </g>
+            );
+          })}
         </g>
+
         <g className="dash-sankey-nodes">
           {layoutGraph.nodes.map((node) => {
             const overlap = selectionOverlap.intersect(node.overlap);
@@ -295,6 +356,7 @@ DashSankey.defaultProps = {
 
   height: 300,
   padding: 5,
+  lineOffset: 5,
   iterations: 6,
   nodeWidth: 24,
   nodePadding: 8,
@@ -323,6 +385,12 @@ DashSankey.propTypes = {
    * @default 5
    */
   padding: PropTypes.number,
+
+  /**
+   * offset between lines
+   * @default 5
+   */
+  lineOffset: PropTypes.number,
   /**
    * sets the number of relaxation iterations when generating the layout and returns this Sankey generator.
    * @default 6

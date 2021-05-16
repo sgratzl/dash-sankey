@@ -15,7 +15,7 @@ const App: React.FC = () => {
         {
           id: 'A2',
           name: 'A2',
-          ids: [4, 5],
+          ids: [4, 5, 6],
         },
       ],
     },

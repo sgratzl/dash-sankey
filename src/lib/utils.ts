@@ -83,4 +83,17 @@ export class OverlapHelper<T> {
     }
     return this;
   }
+
+  withoutUpdate(v: OverlapHelper<T>): OverlapHelper<T> {
+    if (this.isEmpty || v.isEmpty) {
+      return this;
+    }
+
+    for (const elem of this.elems) {
+      if (v.has(elem)) {
+        this.set.delete(elem);
+      }
+    }
+    return this;
+  }
 }

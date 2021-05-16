@@ -1,3 +1,5 @@
+import PropTypes from 'prop-types';
+
 export function classNames(...cs: (string | boolean | null | undefined)[]): string {
   return cs.filter(Boolean).join(' ');
 }
@@ -117,4 +119,18 @@ export function deriveBox(p: number | IBox, defaultValue: IBox): IBox {
     top: typeof p === 'number' ? p : p.top,
     bottom: typeof p === 'number' ? p : p.bottom,
   };
+}
+
+export const PADDING_PROP_TYPES = PropTypes.oneOfType([
+  PropTypes.number.isRequired,
+  PropTypes.shape({
+    left: PropTypes.number.isRequired,
+    top: PropTypes.number.isRequired,
+    right: PropTypes.number.isRequired,
+    bottom: PropTypes.number.isRequired,
+  }).isRequired,
+]);
+
+export function isArray<T>(a: unknown): a is readonly T[] {
+  return Array.isArray(a);
 }

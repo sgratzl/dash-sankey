@@ -13,7 +13,7 @@ import {
 } from 'd3-sankey';
 import { area, curveMonotoneX } from 'd3-shape';
 import './DashSankey.css';
-import { classNames, deriveBox, IBox, OverlapHelper } from '../utils';
+import { classNames, deriveBox, IBox, isArray, OverlapHelper, PADDING_PROP_TYPES } from '../utils';
 
 export type SankeyID = string | number;
 
@@ -35,8 +35,14 @@ export interface SankeyLink extends HasIds {
   target: string;
 }
 
+export interface SankeySelection {
+  type: 'node' | 'link' | 'missing' | 'layer';
+  id: string;
+  ids: readonly SankeyID[];
+}
+
 export interface DashChangeAbleSankeyProps {
-  selection?: readonly SankeyID[];
+  selection?: SankeySelection | readonly SankeyID[];
 }
 
 const DEFAULT_PADDING: IBox = { left: 5, top: 5, right: 5, bottom: 20 };
@@ -85,6 +91,7 @@ export interface DashReadOnlyLayoutSankeyProps {
 
 export interface DashReadOnlySankeyProps {
   levels: SankeyLevel[];
+  selections?: { color: string; ids: readonly SankeyID[] }[];
 }
 
 export type DashSankeyProps = DashReadOnlyLayoutSankeyProps &
@@ -96,6 +103,7 @@ export type DashSankeyProps = DashReadOnlyLayoutSankeyProps &
   };
 
 declare interface SankeyInternalNodeExtras extends SankeyNode {
+  id: string;
   fixedValue: number;
   overlap: OverlapHelper<SankeyID>;
   /**
@@ -247,6 +255,10 @@ function dummy() {
   // dummy
 }
 
+function isSelected(selection: DashChangeAbleSankeyProps['selection'], type: SankeySelection['type'], id: string) {
+  return selection != null && !isArray(selection) && selection.type === type && selection.id === id;
+}
+
 /**
  * DashSankey shows an interactive parallel set / sankey diagram
  */
@@ -264,6 +276,7 @@ const DashSankey: FC<DashSankeyProps> = ({
   levels,
   children,
   selection,
+  selections,
 }) => {
   const p = useMemo(() => deriveBox(padding, DEFAULT_PADDING), [padding]);
   const { ref, width = p.left + p.right + 10 } = useResizeObserver<HTMLDivElement>();
@@ -289,7 +302,14 @@ const DashSankey: FC<DashSankeyProps> = ({
     return s;
   }, [p, width, height, iterations, nodeAlign, nodeWidth, nodePadding, nodeSort]);
 
-  const selectionOverlap = useMemo(() => new OverlapHelper(selection ?? []), [selection]);
+  const selectionOverlap = useMemo(
+    () => new OverlapHelper(isArray(selection) ? selection : selection?.ids ?? []),
+    [selection]
+  );
+  const selectionsOverlaps = useMemo(
+    () => (selections ?? []).map((s) => ({ ...s, overlap: new OverlapHelper(s.ids) })),
+    [selections]
+  );
 
   const graph = useMemo(() => extractGraph(levels), [levels]);
   const layoutGraph = useMemo(() => {
@@ -316,15 +336,21 @@ const DashSankey: FC<DashSankeyProps> = ({
   const maxLayerY1 = layoutGraph.layers.reduce((acc, v) => Math.max(acc, v.y1), 0);
 
   const select = useCallback(
-    (ids: readonly SankeyID[] | OverlapHelper<SankeyID>) => {
+    (type: SankeySelection['type'], selectionId: string, ids: readonly SankeyID[] | OverlapHelper<SankeyID>) => {
       return (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        setProps({ selection: ids instanceof OverlapHelper ? ids.elems : ids });
+        const s: SankeySelection = {
+          id: selectionId,
+          type,
+          ids: ids instanceof OverlapHelper ? ids.elems : ids,
+        };
+        setProps({ selection: s });
       };
     },
     [setProps]
   );
+
   const resetSelection = useCallback(() => {
     setProps({ selection: [] });
   }, [setProps]);
@@ -335,11 +361,31 @@ const DashSankey: FC<DashSankeyProps> = ({
           {layoutGraph.links.map((link) => {
             const overlap = selectionOverlap.intersect(link.overlap);
             return (
-              <g key={link.id} onClick={select(link.overlap.elems)}>
-                <path d={pathGen(link, lineOffset, 1)} className="dash-sankey-link" />
+              <g key={link.id} onClick={select('link', link.id, link.overlap.elems)}>
+                <path
+                  d={pathGen(link, lineOffset, 1)}
+                  className={classNames(
+                    'dash-sankey-link',
+                    isSelected(selection, 'link', link.id) && 'dash-sankey-link__picked'
+                  )}
+                />
                 <title>
                   {link.name}: {link.value.toLocaleString()}
                 </title>
+                {selectionsOverlaps.map((s) => {
+                  const o = s.overlap.intersect(link.overlap);
+                  if (o.isEmpty) {
+                    return null;
+                  }
+                  return (
+                    <path
+                      key={s.color}
+                      d={pathGen(link, lineOffset, o.size / link.overlap.size)}
+                      className="dash-sankey-link"
+                      style={{ fill: s.color }}
+                    />
+                  );
+                })}
                 {overlap.isNotEmpty && (
                   <path
                     d={pathGen(link, lineOffset, overlap.size / link.overlap.size)}
@@ -355,11 +401,31 @@ const DashSankey: FC<DashSankeyProps> = ({
             }
             const overlap = selectionOverlap.intersect(node.missing);
             return (
-              <g key={node.id} onClick={select(node.missing)}>
-                <path d={missingPath(node, lineOffset, 1)} className="dash-sankey-link dash-sankey-link__missing" />
+              <g key={node.id} onClick={select('missing', node.id, node.missing)}>
+                <path
+                  d={missingPath(node, lineOffset, 1)}
+                  className={classNames(
+                    'dash-sankey-link dash-sankey-link__missing',
+                    isSelected(selection, 'missing', node.id) && 'dash-sankey-link__picked'
+                  )}
+                />
                 <title>
                   {node.name} → ?: {node.missing.length.toLocaleString()}
                 </title>
+                {selectionsOverlaps.map((s) => {
+                  const o = s.overlap.intersect(node.missing);
+                  if (o.isEmpty) {
+                    return null;
+                  }
+                  return (
+                    <path
+                      key={s.color}
+                      d={missingPath(node, lineOffset, o.size / node.missing.size)}
+                      className="dash-sankey-link dash-sankey-link__missing"
+                      style={{ fill: s.color }}
+                    />
+                  );
+                })}
                 {overlap.isNotEmpty && (
                   <path
                     d={missingPath(node, lineOffset, overlap.size / node.missing.size)}
@@ -378,7 +444,12 @@ const DashSankey: FC<DashSankeyProps> = ({
               x = nodeWidth;
             }
             return (
-              <g key={layer.id} transform={`translate(${layer.x0!},${layer.y0!})`} onClick={select(layer.overlap)}>
+              <g
+                key={layer.id}
+                transform={`translate(${layer.x0!},${layer.y0!})`}
+                onClick={select('layer', layer.id, layer.overlap)}
+                className={classNames(isSelected(selection, 'layer', layer.id) && 'dash-sankey-layer__picked')}
+              >
                 <text
                   x={x}
                   y={layerHeight}
@@ -404,8 +475,34 @@ const DashSankey: FC<DashSankeyProps> = ({
             const overlap = selectionOverlap.intersect(node.overlap);
             const nodeHeight = node.y1! - node.y0!;
             return (
-              <g key={node.id} transform={`translate(${node.x0!},${node.y0!})`} onClick={select(node.ids)}>
-                <rect width={nodeWidth} height={nodeHeight} className="dash-sankey-node" />
+              <g
+                key={node.id}
+                transform={`translate(${node.x0!},${node.y0!})`}
+                onClick={select('node', node.id, node.ids)}
+              >
+                <rect
+                  width={nodeWidth}
+                  height={nodeHeight}
+                  className={classNames(
+                    'dash-sankey-node',
+                    isSelected(selection, 'node', node.id) && 'dash-sankey-node__picked'
+                  )}
+                />
+                {selectionsOverlaps.map((s) => {
+                  const o = s.overlap.intersect(node.overlap);
+                  if (o.isEmpty) {
+                    return null;
+                  }
+                  return (
+                    <rect
+                      key={s.color}
+                      width={nodeWidth}
+                      height={nodeHeight * (o.size / node.overlap.size)}
+                      className="dash-sankey-node"
+                      style={{ fill: s.color }}
+                    />
+                  );
+                })}
                 {overlap.isNotEmpty && (
                   <rect
                     width={nodeWidth}
@@ -451,7 +548,21 @@ DashSankey.defaultProps = {
   nodeSort: 'auto',
   children: [],
   selection: undefined,
+  selections: undefined,
 };
+
+const ID_ARRAY = PropTypes.arrayOf(
+  PropTypes.oneOfType([PropTypes.string.isRequired, PropTypes.number.isRequired]).isRequired
+).isRequired;
+
+const SELECTION_PROP_TYPE = PropTypes.oneOfType([
+  ID_ARRAY,
+  PropTypes.shape({
+    id: PropTypes.string.isRequired,
+    type: PropTypes.oneOf<'node' | 'link' | 'missing' | 'layer'>(['node', 'link', 'missing', 'layer']).isRequired,
+    ids: ID_ARRAY,
+  }),
+]);
 
 DashSankey.propTypes = {
   /**
@@ -477,15 +588,7 @@ DashSankey.propTypes = {
    * padding around SVG
    * @default 5
    */
-  padding: PropTypes.oneOfType([
-    PropTypes.number.isRequired,
-    PropTypes.shape({
-      left: PropTypes.number.isRequired,
-      top: PropTypes.number.isRequired,
-      right: PropTypes.number.isRequired,
-      bottom: PropTypes.number.isRequired,
-    }).isRequired,
-  ]),
+  padding: PADDING_PROP_TYPES,
 
   /**
    * offset between lines
@@ -528,19 +631,21 @@ DashSankey.propTypes = {
         PropTypes.shape({
           id: PropTypes.string.isRequired,
           name: PropTypes.string.isRequired,
-          ids: PropTypes.arrayOf(
-            PropTypes.oneOfType([PropTypes.string.isRequired, PropTypes.number.isRequired]).isRequired
-          ).isRequired,
+          ids: ID_ARRAY,
         }).isRequired
       ).isRequired,
     }).isRequired
   ).isRequired,
 
   /**
-   * the ids to highlight
+   * the selection to highlight
    */
-  selection: PropTypes.arrayOf(
-    PropTypes.oneOfType([PropTypes.string.isRequired, PropTypes.number.isRequired]).isRequired
+  selection: SELECTION_PROP_TYPE,
+  selections: PropTypes.arrayOf(
+    PropTypes.shape({
+      color: PropTypes.string.isRequired,
+      ids: ID_ARRAY,
+    }).isRequired
   ),
 };
 

@@ -285,6 +285,7 @@ GitHub.sublime-settings
 /dash_sankey/*.map
 /dash_sankey/*.py
 /deps
+/man
 /inst
 /R
 /src/*.jl

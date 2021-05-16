@@ -290,6 +290,13 @@ const DashSankey: FC<DashSankeyProps> = ({
 
   const graph = useMemo(() => extractGraph(levels), [levels]);
   const layoutGraph = useMemo(() => {
+    if (levels.length === 0) {
+      return {
+        nodes: [],
+        links: [],
+        layers: [],
+      };
+    }
     const g = sankeyGen({
       // work on copy since manipulated in place
       nodes: graph.nodes.map((d) => ({ ...d })),

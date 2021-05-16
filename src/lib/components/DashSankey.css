@@ -1,4 +1,3 @@
-
 .dash-sankey-node,
 .dash-sankey-link {
   fill: steelblue;
@@ -18,14 +17,12 @@
   text-anchor: end;
 }
 
-
 .dash-sankey-node:hover,
 .dash-sankey-node__selected,
 .dash-sankey-link:hover,
 .dash-sankey-link__selected {
   fill: orange;
 }
-
 
 .dash-sankey-layer-name {
   dominant-baseline: hanging;

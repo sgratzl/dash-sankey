@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import React, { FC, useMemo } from 'react';
+import React, { FC, useCallback, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import useResizeObserver from 'use-resize-observer';
 import {
@@ -13,6 +13,7 @@ import {
 } from 'd3-sankey';
 import { area, curveMonotoneX } from 'd3-shape';
 import './DashSankey.css';
+import { classNames, OverlapHelper } from '../utils';
 
 export type SankeyID = string | number;
 
@@ -87,8 +88,14 @@ export type DashSankeyProps = DashReadOnlyLayoutSankeyProps &
     children?: React.ReactNode;
   };
 
-declare type SankeyInternalNode = SankeyNodeImpl<SankeyNode & { fixedValue: number }, HasIds & { id: string }>;
-declare type SankeyInternalLink = SankeyLinkImpl<SankeyNode & { fixedValue: number }, HasIds & { id: string }>;
+declare type SankeyInternalNode = SankeyNodeImpl<
+  SankeyNode & { fixedValue: number; overlap: OverlapHelper<SankeyID> },
+  { id: string; name: string; overlap: OverlapHelper<SankeyID> }
+>;
+declare type SankeyInternalLink = SankeyLinkImpl<
+  SankeyNode & { fixedValue: number; overlap: OverlapHelper<SankeyID> },
+  { id: string; name: string; overlap: OverlapHelper<SankeyID> }
+>;
 
 function extractGraph(levels: readonly SankeyLevel[]) {
   const nodes: SankeyInternalNode[] = [];
@@ -96,6 +103,7 @@ function extractGraph(levels: readonly SankeyLevel[]) {
     return level.nodes.map((d) => {
       const n: SankeyInternalNode = {
         ...d,
+        overlap: new OverlapHelper(d.ids),
         fixedValue: d.ids.length,
       };
       nodes.push(n);
@@ -109,14 +117,14 @@ function extractGraph(levels: readonly SankeyLevel[]) {
     const left = transformedLevels[i];
     const right = transformedLevels[i + 1];
     for (const lNode of left) {
-      const lNodeIds = new Set(lNode.ids);
       for (const rNode of right) {
-        const overlap = rNode.ids.filter((v) => lNodeIds.has(v));
-        if (overlap.length > 0) {
+        const overlap = lNode.overlap.overlap(rNode.overlap);
+        if (overlap.isNotEmpty) {
           links.push({
             id: `${lNode.id}-${rNode.id}`,
-            value: overlap.length,
-            ids: [...overlap],
+            name: `${lNode.name} → ${rNode.name}`,
+            value: overlap.size,
+            overlap,
             source: lNode.id,
             target: rNode.id,
           });
@@ -130,8 +138,10 @@ function extractGraph(levels: readonly SankeyLevel[]) {
   };
 }
 
-function pathGen(link: SankeyInternalLink) {
-  const w2 = link.width! / 2;
+function pathGen(link: SankeyInternalLink, fraction = 1) {
+  const base = -link.width! / 2;
+  const height = link.width! * fraction;
+
   const p = area<{ x: number; y0: number; y1: number }>()
     .curve(curveMonotoneX)
     .x((d) => d.x)
@@ -142,24 +152,25 @@ function pathGen(link: SankeyInternalLink) {
     p([
       {
         x: (link.source as SankeyInternalNode).x1!,
-        y0: link.y0! - w2,
-        y1: link.y0! + w2,
+        y0: link.y0! + base,
+        y1: link.y0! + base + height,
       },
       {
         x: (link.target as SankeyInternalNode).x0!,
-        y0: link.y1! - w2,
-        y1: link.y1! + w2,
+        y0: link.y1! + base,
+        y1: link.y1! + base + height,
       },
     ]) ?? ''
   );
 }
 
-function classNames(...cs: (string | boolean | null | undefined)[]) {
-  return cs.filter(Boolean).join(' ');
+function dummy() {
+  // dummy
 }
 
 const DashSankey: FC<DashSankeyProps> = ({
   id,
+  setProps = dummy,
   height = 300,
   padding = 5,
   iterations = 6,
@@ -169,6 +180,7 @@ const DashSankey: FC<DashSankeyProps> = ({
   nodeSort = 'auto',
   levels,
   children,
+  selection,
 }) => {
   const { ref, width = padding * 3 } = useResizeObserver<HTMLDivElement>();
   const sankeyGen = useMemo(() => {
@@ -193,6 +205,8 @@ const DashSankey: FC<DashSankeyProps> = ({
     return s;
   }, [padding, width, height, iterations, nodeAlign, nodeWidth, nodePadding, nodeSort]);
 
+  const selectionOverlap = useMemo(() => new OverlapHelper(selection ?? []), [selection]);
+
   const graph = useMemo(() => extractGraph(levels), [levels]);
   const layoutGraph = useMemo(
     () =>
@@ -205,34 +219,69 @@ const DashSankey: FC<DashSankeyProps> = ({
   );
   // TODO level labels
   // TODO link labels?
-  // TODO selections
   const maxDepth = layoutGraph.nodes.reduce((acc, v) => Math.max(acc, v.depth ?? 0), 0);
+
+  const select = useCallback(
+    (ids: readonly SankeyID[] | OverlapHelper<SankeyID>) => {
+      return () => {
+        setProps({ selection: ids instanceof OverlapHelper ? ids.elems : ids });
+      };
+    },
+    [setProps]
+  );
   return (
     <div ref={ref} id={id}>
       <svg width={width} height={height} className="dash-sankey">
-        <g className="dash-sankey-nodes">
-          {layoutGraph.nodes.map((node) => (
-            <g key={node.id} transform={`translate(${node.x0!},${node.y0!})`}>
-              <rect width={nodeWidth} height={node.y1! - node.y0!} className="dash-sankey-node" />
-              <text
-                x={node.depth! < maxDepth ? nodeWidth : 0}
-                y={(node.y1! - node.y0!) / 2}
-                dx={node.depth! < maxDepth ? 2 : -2}
-                className={classNames(
-                  'dash-sankey-node-name',
-                  node.depth! >= maxDepth && 'dash-sankey-node-name__last'
-                )}
-              >
-                {node.name}
-              </text>
-              )
-            </g>
-          ))}
-        </g>
         <g className="dash-sankey-links">
-          {layoutGraph.links.map((link) => (
-            <path key={link.id} d={pathGen(link) ?? ''} className="dash-sankey-link" />
-          ))}
+          {layoutGraph.links.map((link) => {
+            const overlap = selectionOverlap.overlap(link.overlap);
+            return (
+              <g key={link.id} onClick={select(link.overlap.elems)}>
+                <path d={pathGen(link, 1)} className="dash-sankey-link" />
+                <title>
+                  {link.name}: {link.value.toLocaleString()}
+                </title>
+                {overlap.isNotEmpty && (
+                  <path
+                    d={pathGen(link, overlap.size / link.overlap.size)}
+                    className="dash-sankey-link dash-sankey-link__selected"
+                  />
+                )}
+              </g>
+            );
+          })}
+        </g>
+        <g className="dash-sankey-nodes">
+          {layoutGraph.nodes.map((node) => {
+            const overlap = selectionOverlap.overlap(node.overlap);
+            const nodeHeight = node.y1! - node.y0!;
+            return (
+              <g key={node.id} transform={`translate(${node.x0!},${node.y0!})`} onClick={select(node.ids)}>
+                <rect width={nodeWidth} height={nodeHeight} className="dash-sankey-node" />
+                {overlap.isNotEmpty && (
+                  <rect
+                    width={nodeWidth}
+                    height={nodeHeight * (overlap.size / node.overlap.size)}
+                    className="dash-sankey-node dash-sankey-node__selected"
+                  />
+                )}
+                <text
+                  x={node.depth! < maxDepth ? nodeWidth : 0}
+                  y={nodeHeight / 2}
+                  dx={node.depth! < maxDepth ? 2 : -2}
+                  className={classNames(
+                    'dash-sankey-node-name',
+                    node.depth! >= maxDepth && 'dash-sankey-node-name__last'
+                  )}
+                >
+                  {node.name}
+                </text>
+                <title>
+                  {node.name}: {node.value!.toLocaleString()}
+                </title>
+              </g>
+            );
+          })}
         </g>
         {children}
       </svg>
@@ -252,6 +301,7 @@ DashSankey.defaultProps = {
   nodeAlign: 'justify',
   nodeSort: 'auto',
   children: [],
+  selection: undefined,
 };
 
 DashSankey.propTypes = {
@@ -316,6 +366,10 @@ DashSankey.propTypes = {
       ).isRequired,
     }).isRequired
   ).isRequired,
+
+  selection: PropTypes.arrayOf(
+    PropTypes.oneOfType([PropTypes.string.isRequired, PropTypes.number.isRequired]).isRequired
+  ),
 };
 
 export default DashSankey;

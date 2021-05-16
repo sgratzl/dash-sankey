@@ -1,8 +1,8 @@
-import React from 'react';
-import { DashSankey } from '../lib';
+import React, { useState } from 'react';
+import { DashChangeAbleSankeyProps, DashSankey } from '../lib';
 
 const App: React.FC = () => {
-  // const [state, setState] = useState({ value: '' });
+  const [state, setState] = useState<DashChangeAbleSankeyProps>({ selection: undefined as string[] | undefined });
   const levels = [
     {
       name: 'A',
@@ -37,7 +37,7 @@ const App: React.FC = () => {
   ];
   return (
     <div>
-      <DashSankey levels={levels} />
+      <DashSankey levels={levels} setProps={setState} selection={state.selection} />
     </div>
   );
 };

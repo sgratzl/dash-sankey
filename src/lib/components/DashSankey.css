@@ -1,6 +1,13 @@
 
-.dash-sankey-node {
+.dash-sankey-node,
+.dash-sankey-link {
   fill: steelblue;
+  cursor: pointer;
+}
+
+.dash-sankey-link {
+  opacity: 0.2;
+  stroke: none;
 }
 
 .dash-sankey-node-name {
@@ -12,8 +19,9 @@
 }
 
 
-.dash-sankey-link {
-  fill: steelblue;
-  opacity: 0.2;
-  stroke: none;
+.dash-sankey-node:hover,
+.dash-sankey-node__selected,
+.dash-sankey-link:hover,
+.dash-sankey-link__selected {
+  fill: orange;
 }

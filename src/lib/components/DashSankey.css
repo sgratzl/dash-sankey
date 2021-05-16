@@ -1,0 +1,13 @@
+.dash-sankey {
+
+}
+
+.dash-sankey-node {
+  fill: steelblue;
+}
+
+.dash-sankey-link {
+  fill: steelblue;
+  opacity: 0.2;
+  stroke: none;
+}

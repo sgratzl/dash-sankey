@@ -386,7 +386,7 @@ const DashSankey: FC<DashSankeyProps> = ({
                   className={classNames(
                     'dash-sankey-layer-name',
                     i === 0 && 'dash-sankey-layer-name__first',
-                    i === layoutGraph.layers.length && 'dash-sankey-layer-name__last'
+                    i === layoutGraph.layers.length - 1 && 'dash-sankey-layer-name__last'
                   )}
                 >
                   {layer.name}

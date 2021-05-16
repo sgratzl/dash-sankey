@@ -1,10 +1,16 @@
-.dash-sankey {
-
-}
 
 .dash-sankey-node {
   fill: steelblue;
 }
+
+.dash-sankey-node-name {
+  dominant-baseline: central;
+}
+
+.dash-sankey-node-name__last {
+  text-anchor: end;
+}
+
 
 .dash-sankey-link {
   fill: steelblue;

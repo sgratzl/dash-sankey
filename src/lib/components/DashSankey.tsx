@@ -87,8 +87,8 @@ export type DashSankeyProps = DashReadOnlyLayoutSankeyProps &
     children?: React.ReactNode;
   };
 
-declare type SankeyInternalNode = SankeyNodeImpl<SankeyNode & { fixedValue?: number }, HasIds & { id: string }>;
-declare type SankeyInternalLink = SankeyLinkImpl<SankeyNode & { fixedValue?: number }, HasIds & { id: string }>;
+declare type SankeyInternalNode = SankeyNodeImpl<SankeyNode & { fixedValue: number }, HasIds & { id: string }>;
+declare type SankeyInternalLink = SankeyLinkImpl<SankeyNode & { fixedValue: number }, HasIds & { id: string }>;
 
 function extractGraph(levels: readonly SankeyLevel[]) {
   const nodes: SankeyInternalNode[] = [];
@@ -96,7 +96,7 @@ function extractGraph(levels: readonly SankeyLevel[]) {
     return level.nodes.map((d) => {
       const n: SankeyInternalNode = {
         ...d,
-        // fixedValue: d.ids.length,
+        fixedValue: d.ids.length,
       };
       nodes.push(n);
       return n;
@@ -154,6 +154,10 @@ function pathGen(link: SankeyInternalLink) {
   );
 }
 
+function classNames(...cs: (string | boolean | null | undefined)[]) {
+  return cs.filter(Boolean).join(' ');
+}
+
 const DashSankey: FC<DashSankeyProps> = ({
   id,
   height = 300,
@@ -190,7 +194,7 @@ const DashSankey: FC<DashSankeyProps> = ({
   }, [padding, width, height, iterations, nodeAlign, nodeWidth, nodePadding, nodeSort]);
 
   const graph = useMemo(() => extractGraph(levels), [levels]);
-  const data = useMemo(
+  const layoutGraph = useMemo(
     () =>
       sankeyGen({
         // work on copy since manipulated in place
@@ -200,21 +204,33 @@ const DashSankey: FC<DashSankeyProps> = ({
     [graph, sankeyGen]
   );
   // TODO level labels
-  // TODO node labels
   // TODO link labels?
   // TODO selections
+  const maxDepth = layoutGraph.nodes.reduce((acc, v) => Math.max(acc, v.depth ?? 0), 0);
   return (
     <div ref={ref} id={id}>
       <svg width={width} height={height} className="dash-sankey">
         <g className="dash-sankey-nodes">
-          {data.nodes.map((node) => (
-            <g key={node.id} transform={`translate(${node.x0 ?? 0},${node.y0 ?? 0})`}>
-              <rect width={nodeWidth} height={(node.y1 ?? 0) - (node.y0 ?? 0)} className="dash-sankey-node" />
+          {layoutGraph.nodes.map((node) => (
+            <g key={node.id} transform={`translate(${node.x0!},${node.y0!})`}>
+              <rect width={nodeWidth} height={node.y1! - node.y0!} className="dash-sankey-node" />
+              <text
+                x={node.depth! < maxDepth ? nodeWidth : 0}
+                y={(node.y1! - node.y0!) / 2}
+                dx={node.depth! < maxDepth ? 2 : -2}
+                className={classNames(
+                  'dash-sankey-node-name',
+                  node.depth! >= maxDepth && 'dash-sankey-node-name__last'
+                )}
+              >
+                {node.name}
+              </text>
+              )
             </g>
           ))}
         </g>
         <g className="dash-sankey-links">
-          {data.links.map((link) => (
+          {layoutGraph.links.map((link) => (
             <path key={link.id} d={pathGen(link) ?? ''} className="dash-sankey-link" />
           ))}
         </g>

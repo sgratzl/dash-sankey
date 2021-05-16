@@ -28,7 +28,11 @@ export class OverlapHelper<T> {
     return this.set.size;
   }
 
-  overlap(v: Iterable<T> | OverlapHelper<T>): OverlapHelper<T> {
+  get length(): number {
+    return this.set.size;
+  }
+
+  intersect(v: Iterable<T> | OverlapHelper<T>): OverlapHelper<T> {
     if (this.isEmpty) {
       return new OverlapHelper(new Set<T>());
     }
@@ -48,5 +52,35 @@ export class OverlapHelper<T> {
       }
     }
     return new OverlapHelper(r);
+  }
+
+  copy(): OverlapHelper<T> {
+    return new OverlapHelper(new Set(this.set));
+  }
+
+  intersectUpdate(v: Iterable<T> | OverlapHelper<T>): OverlapHelper<T> {
+    if (this.isEmpty) {
+      return this;
+    }
+
+    if (v instanceof OverlapHelper) {
+      if (v.isEmpty) {
+        this.set.clear();
+        return this;
+      }
+      for (const elem of this.elems) {
+        if (!v.has(elem)) {
+          this.set.delete(elem);
+        }
+      }
+    } else {
+      const has = new Set(v);
+      for (const elem of this.elems) {
+        if (!has.has(elem)) {
+          this.set.delete(elem);
+        }
+      }
+    }
+    return this;
   }
 }

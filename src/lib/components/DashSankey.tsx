@@ -118,7 +118,7 @@ function extractGraph(levels: readonly SankeyLevel[]) {
     const right = transformedLevels[i + 1];
     for (const lNode of left) {
       for (const rNode of right) {
-        const overlap = lNode.overlap.overlap(rNode.overlap);
+        const overlap = lNode.overlap.intersect(rNode.overlap);
         if (overlap.isNotEmpty) {
           links.push({
             id: `${lNode.id}-${rNode.id}`,
@@ -234,7 +234,7 @@ const DashSankey: FC<DashSankeyProps> = ({
       <svg width={width} height={height} className="dash-sankey">
         <g className="dash-sankey-links">
           {layoutGraph.links.map((link) => {
-            const overlap = selectionOverlap.overlap(link.overlap);
+            const overlap = selectionOverlap.intersect(link.overlap);
             return (
               <g key={link.id} onClick={select(link.overlap.elems)}>
                 <path d={pathGen(link, 1)} className="dash-sankey-link" />
@@ -253,7 +253,7 @@ const DashSankey: FC<DashSankeyProps> = ({
         </g>
         <g className="dash-sankey-nodes">
           {layoutGraph.nodes.map((node) => {
-            const overlap = selectionOverlap.overlap(node.overlap);
+            const overlap = selectionOverlap.intersect(node.overlap);
             const nodeHeight = node.y1! - node.y0!;
             return (
               <g key={node.id} transform={`translate(${node.x0!},${node.y0!})`} onClick={select(node.ids)}>

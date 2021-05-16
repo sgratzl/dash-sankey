@@ -58,15 +58,15 @@ export class OverlapHelper<T> {
     return new OverlapHelper(new Set(this.set));
   }
 
-  intersectUpdate(v: Iterable<T> | OverlapHelper<T>): OverlapHelper<T> {
+  intersectUpdate(v: Iterable<T> | OverlapHelper<T>): void {
     if (this.isEmpty) {
-      return this;
+      return;
     }
 
     if (v instanceof OverlapHelper) {
       if (v.isEmpty) {
         this.set.clear();
-        return this;
+        return;
       }
       for (const elem of this.elems) {
         if (!v.has(elem)) {
@@ -81,12 +81,11 @@ export class OverlapHelper<T> {
         }
       }
     }
-    return this;
   }
 
-  withoutUpdate(v: OverlapHelper<T>): OverlapHelper<T> {
+  withoutUpdate(v: OverlapHelper<T>): void {
     if (this.isEmpty || v.isEmpty) {
-      return this;
+      return;
     }
 
     for (const elem of this.elems) {
@@ -94,6 +93,28 @@ export class OverlapHelper<T> {
         this.set.delete(elem);
       }
     }
-    return this;
   }
+
+  addUpdate(v: OverlapHelper<T>): void {
+    for (const vi of v.set) {
+      this.set.add(vi);
+    }
+  }
+}
+
+export interface IBox {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+}
+
+export function deriveBox(p: number | IBox, defaultValue: IBox): IBox {
+  return {
+    ...defaultValue,
+    left: typeof p === 'number' ? p : p.left,
+    right: typeof p === 'number' ? p : p.right,
+    top: typeof p === 'number' ? p : p.top,
+    bottom: typeof p === 'number' ? p : p.bottom,
+  };
 }

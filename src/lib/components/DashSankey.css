@@ -25,3 +25,17 @@
 .dash-sankey-link__selected {
   fill: orange;
 }
+
+
+.dash-sankey-layer-name {
+  dominant-baseline: hanging;
+  text-anchor: middle;
+}
+
+.dash-sankey-layer-name__first {
+  text-anchor: start;
+}
+
+.dash-sankey-layer-name__last {
+  text-anchor: end;
+}

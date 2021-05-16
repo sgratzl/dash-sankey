@@ -13,7 +13,7 @@ import {
 } from 'd3-sankey';
 import { area, curveMonotoneX } from 'd3-shape';
 import './DashSankey.css';
-import { classNames, OverlapHelper } from '../utils';
+import { classNames, deriveBox, IBox, OverlapHelper } from '../utils';
 
 export type SankeyID = string | number;
 
@@ -39,6 +39,8 @@ export interface DashChangeAbleSankeyProps {
   selection?: readonly SankeyID[];
 }
 
+const DEFAULT_PADDING: IBox = { left: 5, top: 5, right: 5, bottom: 20 };
+
 export interface DashReadOnlyLayoutSankeyProps {
   /**
    * @default 300
@@ -46,9 +48,9 @@ export interface DashReadOnlyLayoutSankeyProps {
   height?: number;
   /**
    * padding around SVG
-   * @default 5
+   * @default ({left: 5, top: 5, right: 5, bottom: 20})
    */
-  padding?: number;
+  padding?: number | IBox;
   /**
    * offset around line before bending
    * @default 5
@@ -203,6 +205,44 @@ function missingPath(node: SankeyInternalNode, off: number, fraction = 1) {
   return `M${x},${y0} ${curve1} ${curve2} Z`;
 }
 
+interface SankeyInternalLayer {
+  id: string;
+  nodes: SankeyInternalNode[];
+  name: string;
+  overlap: OverlapHelper<SankeyID>;
+
+  x0: number;
+  x1: number;
+  y0: number;
+  y1: number;
+}
+
+function extractLayers(nodes: SankeyInternalNode[], levels: SankeyLevel[]) {
+  const layers: SankeyInternalLayer[] = [];
+  for (const node of nodes) {
+    const layer = node.depth ?? 0;
+    const l = layers[layer];
+    if (l == null) {
+      layers[layer] = {
+        id: layer.toString(),
+        name: levels[layer]?.name ?? `Layer ${layer}`,
+        overlap: node.overlap.copy(),
+        x0: node.x0!,
+        x1: node.x1!,
+        y0: node.y0!,
+        y1: node.y1!,
+        nodes: [node],
+      };
+    } else {
+      l.overlap.addUpdate(node.overlap);
+      l.y0 = Math.min(l.y0, node.y0!);
+      l.y1 = Math.max(l.y1, node.y1!);
+      l.nodes.push(node);
+    }
+  }
+  return layers;
+}
+
 function dummy() {
   // dummy
 }
@@ -211,7 +251,7 @@ const DashSankey: FC<DashSankeyProps> = ({
   id,
   setProps = dummy,
   height = 300,
-  padding = 5,
+  padding = DEFAULT_PADDING,
   lineOffset = 5,
   iterations = 6,
   nodeAlign = 'justify',
@@ -222,12 +262,13 @@ const DashSankey: FC<DashSankeyProps> = ({
   children,
   selection,
 }) => {
-  const { ref, width = padding * 3 } = useResizeObserver<HTMLDivElement>();
+  const p = useMemo(() => deriveBox(padding, DEFAULT_PADDING), [padding]);
+  const { ref, width = p.left + p.right + 10 } = useResizeObserver<HTMLDivElement>();
   const sankeyGen = useMemo(() => {
     const s = sankey<SankeyInternalNode, SankeyInternalLink>();
     s.extent([
-      [padding, padding],
-      [width - padding, height - padding],
+      [p.left, p.top],
+      [width - p.left - p.right, height - p.top - p.bottom],
     ]);
     const alignmentsToFunction = {
       left: sankeyLeft,
@@ -243,35 +284,43 @@ const DashSankey: FC<DashSankeyProps> = ({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .nodeSort(nodeSort === 'auto' ? undefined : (null as any));
     return s;
-  }, [padding, width, height, iterations, nodeAlign, nodeWidth, nodePadding, nodeSort]);
+  }, [p, width, height, iterations, nodeAlign, nodeWidth, nodePadding, nodeSort]);
 
   const selectionOverlap = useMemo(() => new OverlapHelper(selection ?? []), [selection]);
 
   const graph = useMemo(() => extractGraph(levels), [levels]);
-  const layoutGraph = useMemo(
-    () =>
-      sankeyGen({
-        // work on copy since manipulated in place
-        nodes: graph.nodes.map((d) => ({ ...d })),
-        links: graph.links.map((d) => ({ ...d })),
-      }),
-    [graph, sankeyGen]
-  );
-  // TODO level labels
-  // TODO link labels?
+  const layoutGraph = useMemo(() => {
+    const g = sankeyGen({
+      // work on copy since manipulated in place
+      nodes: graph.nodes.map((d) => ({ ...d })),
+      links: graph.links.map((d) => ({ ...d })),
+    });
+    return {
+      nodes: g.nodes,
+      links: g.links,
+      layers: extractLayers(g.nodes, levels),
+    };
+  }, [graph, sankeyGen, levels]);
+
   const maxDepth = layoutGraph.nodes.reduce((acc, v) => Math.max(acc, v.depth ?? 0), 0);
+  const maxLayerY1 = layoutGraph.layers.reduce((acc, v) => Math.max(acc, v.y1), 0);
 
   const select = useCallback(
     (ids: readonly SankeyID[] | OverlapHelper<SankeyID>) => {
-      return () => {
+      return (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
         setProps({ selection: ids instanceof OverlapHelper ? ids.elems : ids });
       };
     },
     [setProps]
   );
+  const resetSelection = useCallback(() => {
+    setProps({ selection: [] });
+  }, [setProps]);
   return (
     <div ref={ref} id={id}>
-      <svg width={width} height={height} className="dash-sankey">
+      <svg width={width} height={height} className="dash-sankey" onClick={resetSelection}>
         <g className="dash-sankey-links">
           {layoutGraph.links.map((link) => {
             const overlap = selectionOverlap.intersect(link.overlap);
@@ -307,6 +356,34 @@ const DashSankey: FC<DashSankeyProps> = ({
                     className="dash-sankey-link dash-sankey-link__missing dash-sankey-link__selected"
                   />
                 )}
+              </g>
+            );
+          })}
+        </g>
+        <g className="dash-sankey-layers">
+          {layoutGraph.layers.map((layer, i) => {
+            const layerHeight = maxLayerY1 - layer.y0;
+            let x = i > 0 ? nodeWidth / 2 : 0;
+            if (i === layoutGraph.layers.length - 1) {
+              x = nodeWidth;
+            }
+            return (
+              <g key={layer.id} transform={`translate(${layer.x0!},${layer.y0!})`} onClick={select(layer.overlap)}>
+                <text
+                  x={x}
+                  y={layerHeight}
+                  dy={lineOffset + 2}
+                  className={classNames(
+                    'dash-sankey-layer-name',
+                    i === 0 && 'dash-sankey-layer-name__first',
+                    i === layoutGraph.layers.length && 'dash-sankey-layer-name__last'
+                  )}
+                >
+                  {layer.name}
+                </text>
+                <title>
+                  {layer.name}: {layer.overlap.length.toLocaleString()}
+                </title>
               </g>
             );
           })}
@@ -355,7 +432,7 @@ DashSankey.defaultProps = {
   setProps: undefined,
 
   height: 300,
-  padding: 5,
+  padding: DEFAULT_PADDING,
   lineOffset: 5,
   iterations: 6,
   nodeWidth: 24,
@@ -384,7 +461,15 @@ DashSankey.propTypes = {
    * padding around SVG
    * @default 5
    */
-  padding: PropTypes.number,
+  padding: PropTypes.oneOfType([
+    PropTypes.number.isRequired,
+    PropTypes.shape({
+      left: PropTypes.number.isRequired,
+      top: PropTypes.number.isRequired,
+      right: PropTypes.number.isRequired,
+      bottom: PropTypes.number.isRequired,
+    }).isRequired,
+  ]),
 
   /**
    * offset between lines

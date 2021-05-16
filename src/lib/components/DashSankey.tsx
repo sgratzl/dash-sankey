@@ -156,7 +156,7 @@ function extractGraph(levels: readonly SankeyLevel[]) {
   };
 }
 
-function pathGen(link: SankeyInternalLink, lineOffset: number, fraction = 1) {
+function pathGen(link: SankeyInternalLink, lineOffset: number, fraction: number) {
   const base = -link.width! / 2;
   const height = link.width! * fraction;
 
@@ -342,7 +342,7 @@ const DashSankey: FC<DashSankeyProps> = ({
                 </title>
                 {overlap.isNotEmpty && (
                   <path
-                    d={pathGen(link, overlap.size / link.overlap.size)}
+                    d={pathGen(link, lineOffset, overlap.size / link.overlap.size)}
                     className="dash-sankey-link dash-sankey-link__selected"
                   />
                 )}

@@ -247,6 +247,9 @@ function dummy() {
   // dummy
 }
 
+/**
+ * DashSankey shows an interactive parallel set / sankey diagram
+ */
 const DashSankey: FC<DashSankeyProps> = ({
   id,
   setProps = dummy,
@@ -455,7 +458,13 @@ DashSankey.propTypes = {
    * The ID used to identify this component in Dash callbacks.
    */
   id: PropTypes.string,
+  /**
+   * set props helper for dash
+   */
   setProps: PropTypes.func,
+  /**
+   * children helper for dash
+   */
   children: PropTypes.node,
 
   // layout
@@ -527,6 +536,9 @@ DashSankey.propTypes = {
     }).isRequired
   ).isRequired,
 
+  /**
+   * the ids to highlight
+   */
   selection: PropTypes.arrayOf(
     PropTypes.oneOfType([PropTypes.string.isRequired, PropTypes.number.isRequired]).isRequired
   ),

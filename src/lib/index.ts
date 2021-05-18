@@ -7,6 +7,9 @@ export type {
   DashReadOnlySankeyProps,
   DashSankeyProps,
   SankeyLevel,
+  SankeyLink,
+  SankeyID,
+  SankeySelection,
   SankeyNode,
 } from './components/DashSankey';
 

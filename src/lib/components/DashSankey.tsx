@@ -2,44 +2,22 @@
 import React, { FC, useCallback, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import useResizeObserver from 'use-resize-observer';
-import {
-  sankey,
-  sankeyCenter,
-  sankeyJustify,
-  sankeyLeft,
-  sankeyRight,
-  SankeyLink as SankeyLinkImpl,
-  SankeyNode as SankeyNodeImpl,
-} from 'd3-sankey';
-import { area, curveMonotoneX } from 'd3-shape';
+import { sankey, sankeyCenter, sankeyJustify, sankeyLeft, sankeyRight } from 'd3-sankey';
 import './DashSankey.css';
-import { classNames, deriveBox, IBox, isArray, OverlapHelper, PADDING_PROP_TYPES } from '../utils';
+import { classNames, deriveBox, IBox, isArray, noop, OverlapHelper, PADDING_PROP_TYPES } from '../utils';
+import {
+  extractGraph,
+  extractLayers,
+  isSelected,
+  SankeyID,
+  SankeyInternalLink,
+  SankeyInternalNode,
+  SankeyLevel,
+  SankeySelection,
+} from './model';
+import { missingPath, pathGen } from './renderUtils';
 
-export type SankeyID = string | number;
-
-export interface HasIds {
-  ids: readonly SankeyID[];
-}
-export interface SankeyNode extends HasIds {
-  id: string;
-  name: string;
-}
-
-export interface SankeyLevel {
-  name: string;
-  nodes: SankeyNode[];
-}
-
-export interface SankeyLink extends HasIds {
-  source: string;
-  target: string;
-}
-
-export interface SankeySelection {
-  type: 'node' | 'link' | 'missing' | 'layer';
-  id: string;
-  ids: readonly SankeyID[];
-}
+export type { SankeyID, SankeyLevel, SankeyNode, SankeyLink, SankeySelection } from './model';
 
 export interface DashChangeAbleSankeyProps {
   selection?: SankeySelection | readonly SankeyID[];
@@ -102,169 +80,12 @@ export type DashSankeyProps = DashReadOnlyLayoutSankeyProps &
     children?: React.ReactNode;
   };
 
-declare interface SankeyInternalNodeExtras extends SankeyNode {
-  id: string;
-  fixedValue: number;
-  overlap: OverlapHelper<SankeyID>;
-  /**
-   * ids that are not part of any outgoing link
-   */
-  missing: OverlapHelper<SankeyID>;
-}
-declare interface SankeyInternalLinkExtras {
-  id: string;
-  name: string;
-  overlap: OverlapHelper<SankeyID>;
-}
-declare type SankeyInternalNode = SankeyNodeImpl<SankeyInternalNodeExtras, SankeyInternalLinkExtras>;
-declare type SankeyInternalLink = SankeyLinkImpl<SankeyInternalNodeExtras, SankeyInternalLinkExtras>;
-
-function extractGraph(levels: readonly SankeyLevel[]) {
-  const nodes: SankeyInternalNode[] = [];
-  const transformedLevels = levels.map((level) => {
-    return level.nodes.map((d) => {
-      const overlap = new OverlapHelper(d.ids);
-      const n: SankeyInternalNode = {
-        ...d,
-        overlap,
-        fixedValue: d.ids.length,
-        missing: overlap.copy(),
-      };
-      nodes.push(n);
-      return n;
-    });
-  });
-
-  const links: SankeyInternalLink[] = [];
-
-  for (let i = 0; i < transformedLevels.length - 1; i += 1) {
-    const left = transformedLevels[i];
-    const right = transformedLevels[i + 1];
-    for (const lNode of left) {
-      for (const rNode of right) {
-        const overlap = lNode.overlap.intersect(rNode.overlap);
-        lNode.missing.withoutUpdate(overlap);
-
-        if (overlap.isNotEmpty) {
-          links.push({
-            id: `${lNode.id}-${rNode.id}`,
-            name: `${lNode.name} → ${rNode.name}`,
-            value: overlap.size,
-            overlap,
-            source: lNode.id,
-            target: rNode.id,
-          });
-        }
-      }
-    }
-  }
-  return {
-    nodes,
-    links,
-  };
-}
-
-function pathGen(link: SankeyInternalLink, lineOffset: number, fraction: number) {
-  const base = -link.width! / 2;
-  const height = link.width! * fraction;
-
-  const p = area<{ x: number; y0: number; y1: number }>()
-    .curve(curveMonotoneX)
-    .x((d) => d.x)
-    .y0((d) => d.y0)
-    .y1((d) => d.y1);
-
-  return (
-    p([
-      {
-        x: (link.source as SankeyInternalNode).x1!,
-        y0: link.y0! + base,
-        y1: link.y0! + base + height,
-      },
-      {
-        x: (link.source as SankeyInternalNode).x1! + lineOffset,
-        y0: link.y0! + base,
-        y1: link.y0! + base + height,
-      },
-      {
-        x: (link.target as SankeyInternalNode).x0! - lineOffset,
-        y0: link.y1! + base,
-        y1: link.y1! + base + height,
-      },
-      {
-        x: (link.target as SankeyInternalNode).x0!,
-        y0: link.y1! + base,
-        y1: link.y1! + base + height,
-      },
-    ]) ?? ''
-  );
-}
-
-function missingPath(node: SankeyInternalNode, off: number, fraction = 1) {
-  const x = node.x1!;
-  const y1 = node.y1!;
-  const y0 = y1 - (y1 - node.y0!) * (node.missing.size / node.overlap.size);
-  const height = (y1 - y0) * fraction;
-  const width = height;
-  const x1 = x + width;
-
-  const curve1 = `L${x + off},${y0} C${x + off + width / 2},${y0} ${x1},${y1 - off - height / 2} ${x1},${y1 + off}`;
-  const curve2 = `L${x + off},${y1 + off} C${x + off},${y1 + off * 0.5} ${x + off * 0.5},${y1} ${x},${y1}`;
-  return `M${x},${y0} ${curve1} ${curve2} Z`;
-}
-
-interface SankeyInternalLayer {
-  id: string;
-  nodes: SankeyInternalNode[];
-  name: string;
-  overlap: OverlapHelper<SankeyID>;
-
-  x0: number;
-  x1: number;
-  y0: number;
-  y1: number;
-}
-
-function extractLayers(nodes: SankeyInternalNode[], levels: SankeyLevel[]) {
-  const layers: SankeyInternalLayer[] = [];
-  for (const node of nodes) {
-    const layer = node.depth ?? 0;
-    const l = layers[layer];
-    if (l == null) {
-      layers[layer] = {
-        id: layer.toString(),
-        name: levels[layer]?.name ?? `Layer ${layer}`,
-        overlap: node.overlap.copy(),
-        x0: node.x0!,
-        x1: node.x1!,
-        y0: node.y0!,
-        y1: node.y1!,
-        nodes: [node],
-      };
-    } else {
-      l.overlap.addUpdate(node.overlap);
-      l.y0 = Math.min(l.y0, node.y0!);
-      l.y1 = Math.max(l.y1, node.y1!);
-      l.nodes.push(node);
-    }
-  }
-  return layers;
-}
-
-function dummy() {
-  // dummy
-}
-
-function isSelected(selection: DashChangeAbleSankeyProps['selection'], type: SankeySelection['type'], id: string) {
-  return selection != null && !isArray(selection) && selection.type === type && selection.id === id;
-}
-
 /**
  * DashSankey shows an interactive parallel set / sankey diagram
  */
 const DashSankey: FC<DashSankeyProps> = ({
   id,
-  setProps = dummy,
+  setProps = noop,
   height = 300,
   padding = DEFAULT_PADDING,
   lineOffset = 5,
@@ -641,6 +462,9 @@ DashSankey.propTypes = {
    * the selection to highlight
    */
   selection: SELECTION_PROP_TYPE,
+  /**
+   * additional selections to highlight in their given color
+   */
   selections: PropTypes.arrayOf(
     PropTypes.shape({
       color: PropTypes.string.isRequired,

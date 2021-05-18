@@ -134,3 +134,7 @@ export const PADDING_PROP_TYPES = PropTypes.oneOfType([
 export function isArray<T>(a: unknown): a is readonly T[] {
   return Array.isArray(a);
 }
+
+export function noop(): void {
+  // dummy
+}

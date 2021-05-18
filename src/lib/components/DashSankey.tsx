@@ -1,14 +1,14 @@
 /* eslint-disable react/destructuring-assignment */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import PropTypes from 'prop-types';
-import React, { FC, Fragment, useMemo } from 'react';
-import { EMPTY_ARR, PADDING_PROP_TYPES } from '../utils';
+import React, { FC, Fragment } from 'react';
+import { PADDING_PROP_TYPES } from '../utils';
 import './DashSankey.css';
 import { SankeyLayoutOptions, useSankeyLayout, useSelections } from '../internal/sankey/hooks';
 import {
   DEFAULT_PADDING,
   SankeyID,
-  SankeyLevel,
+  SankeyLayer,
   SankeySelection,
   SankeyLink,
   SankeyNode,
@@ -19,7 +19,7 @@ import SankeyMissingInLink from '../internal/sankey/SankeyMissingInLink';
 import SankeyMissingOutLink from '../internal/sankey/SankeyMissingOutLink';
 import SankeyNodeC from '../internal/sankey/SankeyNode';
 
-export type { SankeyID, SankeyLevel, SankeyLink, SankeyNode, SankeySelection } from '../internal/sankey/model';
+export type { SankeyID, SankeyLayer, SankeyLink, SankeyNode, SankeySelection } from '../internal/sankey/model';
 
 export interface DashChangeAbleSankeyProps {
   selection?: SankeySelection | readonly SankeyID[];
@@ -31,9 +31,15 @@ export interface DashReadOnlyLayoutSankeyProps extends SankeyLayoutOptions {
    * @default 5
    */
   lineOffset?: number;
+
+  /**
+   * render layers
+   * @default true
+   */
+  showLayers?: boolean;
 }
 export type DashSankeyProps = DashReadOnlyLayoutSankeyProps & {
-  levels?: readonly SankeyLevel[];
+  layers?: readonly SankeyLayer[];
   nodes?: readonly SankeyNode[];
   links?: readonly SankeyLink[];
 } & DashChangeAbleSankeyProps & {
@@ -47,21 +53,20 @@ export type DashSankeyProps = DashReadOnlyLayoutSankeyProps & {
  * DashSankey shows an interactive parallel set / sankey diagram
  */
 const DashSankey: FC<DashSankeyProps> = (props) => {
-  const { id, lineOffset = 5, children, levels, nodes, links } = props;
-  const resolvedData = useMemo(
-    () => levels ?? { nodes: nodes ?? EMPTY_ARR, links: links ?? EMPTY_ARR },
-    [levels, nodes, links]
-  );
+  const { id, lineOffset = 5, children, layers, nodes, links, showLayers = true } = props;
 
-  const { ref, width, height, layoutGraph, maxDepth, maxLayerY1, nodeWidth, graph } = useSankeyLayout(resolvedData, {
-    height: props.height,
-    iterations: props.iterations,
-    nodeAlign: props.nodeAlign,
-    nodePadding: props.nodePadding,
-    nodeSort: props.nodeSort,
-    nodeWidth: props.nodeWidth,
-    padding: props.padding,
-  });
+  const { ref, width, height, layoutGraph, maxLayerY1, nodeWidth, graph } = useSankeyLayout(
+    { layers, nodes, links },
+    {
+      height: props.height,
+      iterations: props.iterations,
+      nodeAlign: props.nodeAlign,
+      nodePadding: props.nodePadding,
+      nodeSort: props.nodeSort,
+      nodeWidth: props.nodeWidth,
+      padding: props.padding,
+    }
+  );
   const { resetSelection, selections } = useSelections(graph, {
     selection: props.selection,
     setProps: props.setProps,
@@ -82,30 +87,38 @@ const DashSankey: FC<DashSankeyProps> = (props) => {
                 key={node.id}
                 selections={selections}
                 node={node}
-                maxDepth={maxDepth}
+                nLayers={layoutGraph.layers.length}
                 lineOffset={lineOffset}
               />
             </Fragment>
           ))}
         </g>
-        <g className="dash-sankey-layers">
-          {layoutGraph.layers.map((layer, i) => (
-            <SankeyLayerC
-              key={layer.id}
-              selections={selections}
-              layer={layer}
-              maxLayerY1={maxLayerY1}
-              i={i}
-              nLayers={layoutGraph.layers.length}
-              nodeWidth={nodeWidth}
-              lineOffset={lineOffset}
-            />
-          ))}
-        </g>
+        {showLayers && (
+          <g className="dash-sankey-layers">
+            {layoutGraph.layers.map((layer, i) => (
+              <SankeyLayerC
+                key={layer.id}
+                selections={selections}
+                layer={layer}
+                maxLayerY1={maxLayerY1}
+                i={i}
+                nLayers={layoutGraph.layers.length}
+                nodeWidth={nodeWidth}
+                lineOffset={lineOffset}
+              />
+            ))}
+          </g>
+        )}
 
         <g className="dash-sankey-nodes">
           {layoutGraph.nodes.map((node) => (
-            <SankeyNodeC key={node.id} selections={selections} node={node} maxDepth={maxDepth} nodeWidth={nodeWidth} />
+            <SankeyNodeC
+              key={node.id}
+              selections={selections}
+              node={node}
+              nLayers={layoutGraph.layers.length}
+              nodeWidth={nodeWidth}
+            />
           ))}
         </g>
         {children}
@@ -129,9 +142,10 @@ DashSankey.defaultProps = {
   children: [],
   selection: undefined,
   selections: undefined,
-  levels: undefined,
+  layers: undefined,
   nodes: undefined,
   links: undefined,
+  showLayers: true,
 };
 
 const ID_ARRAY = PropTypes.arrayOf(
@@ -143,13 +157,14 @@ const NODE_ARR = PropTypes.arrayOf(
     id: PropTypes.string.isRequired,
     name: PropTypes.string.isRequired,
     ids: ID_ARRAY,
+    layer: PropTypes.number,
   }).isRequired
 );
 const LINK_ARR = PropTypes.arrayOf(
   PropTypes.shape({
     source: PropTypes.string.isRequired,
     target: PropTypes.string.isRequired,
-    ids: ID_ARRAY,
+    ids: PropTypes.arrayOf(PropTypes.oneOfType([PropTypes.string.isRequired, PropTypes.number.isRequired]).isRequired),
   }).isRequired
 );
 
@@ -194,6 +209,11 @@ DashSankey.propTypes = {
    */
   lineOffset: PropTypes.number,
   /**
+   * show layer names
+   * @default true
+   */
+  showLayers: PropTypes.bool,
+  /**
    * sets the number of relaxation iterations when generating the layout and returns this Sankey generator.
    * @default 6
    */
@@ -212,17 +232,23 @@ DashSankey.propTypes = {
    * justify method
    * @default 'justify';
    */
-  nodeAlign: PropTypes.oneOf(['left', 'right', 'center', 'justify']),
+  nodeAlign: PropTypes.oneOf<DashReadOnlyLayoutSankeyProps['nodeAlign']>([
+    'left',
+    'right',
+    'center',
+    'justify',
+    'layer',
+  ]),
   /**
    * node sort order
    * @default 'auto'
    */
-  nodeSort: PropTypes.oneOf(['auto', 'fixed']),
+  nodeSort: PropTypes.oneOf<DashReadOnlyLayoutSankeyProps['nodeSort']>(['auto', 'fixed']),
 
   /**
    * level sankey data
    */
-  levels: PropTypes.arrayOf(
+  layers: PropTypes.arrayOf(
     PropTypes.shape({
       name: PropTypes.string.isRequired,
       nodes: PropTypes.arrayOf(

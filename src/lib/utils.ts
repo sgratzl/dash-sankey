@@ -39,7 +39,7 @@ export class OverlapHelper<T> {
 
   intersect(v: Iterable<T> | OverlapHelper<T>): OverlapHelper<T> {
     if (this.isEmpty) {
-      return new OverlapHelper(new Set<T>());
+      return this.copy();
     }
     if (this === v) {
       return this.copy();

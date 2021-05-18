@@ -7,12 +7,13 @@ import { missingOutPath } from './renderUtils';
 
 const SankeyMissingOutLink: FC<{
   node: SankeyInternalNode;
-  maxDepth: number;
+  nLayers: number;
   selections: SankeySelections;
   lineOffset: number;
-}> = ({ node, maxDepth, selections, lineOffset }) => {
+}> = ({ node, nLayers, selections, lineOffset }) => {
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  if (node.missingOut.isEmpty || node.depth! >= maxDepth) {
+  const isLastLayer = node.layer! >= nLayers - 1;
+  if (node.missingOut.isEmpty || isLastLayer) {
     return null;
   }
   const overlap = selections.overlap.intersect(node.missingOut);

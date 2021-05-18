@@ -59,7 +59,7 @@ export function missingInPath(node: SankeyInternalNode, off: number, fraction = 
   const width = height;
   const x1 = x - width;
 
-  const curve1 = `L${x + off},${y0} C${x + off + width / 2},${y0} ${x1},${y1 - off - height / 2} ${x1},${y1 + off}`;
-  const curve2 = `L${x + off},${y1 + off} C${x + off},${y1 + off * 0.5} ${x + off * 0.5},${y1} ${x},${y1}`;
+  const curve1 = `L${x - off},${y0} C${x - off - width / 2},${y0} ${x1},${y1 - off - height / 2} ${x1},${y1 + off}`;
+  const curve2 = `L${x - off},${y1 + off} C${x - off},${y1 + off * 0.5} ${x - off * 0.5},${y1} ${x},${y1}`;
   return `M${x},${y0} ${curve1} ${curve2} Z`;
 }

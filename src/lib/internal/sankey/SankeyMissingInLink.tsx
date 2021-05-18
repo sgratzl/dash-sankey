@@ -11,7 +11,7 @@ const SankeyMissingInLink: FC<{
   lineOffset: number;
 }> = ({ node, selections, lineOffset }) => {
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  if (node.missingIn.isEmpty || node.depth! <= 0) {
+  if (node.missingIn.isEmpty || node.layer! <= 0) {
     return null;
   }
   const overlap = selections.overlap.intersect(node.missingIn);

@@ -41,9 +41,9 @@ export interface SankeyLayoutOptions {
   nodePadding?: number;
   /**
    * justify method
-   * @default 'justify';
+   * @default 'lyaer' if layers else 'justify';
    */
-  nodeAlign?: 'left' | 'right' | 'center' | 'justify';
+  nodeAlign?: 'left' | 'right' | 'center' | 'justify' | 'layer';
   /**
    * node sort order
    * @default 'auto'
@@ -51,14 +51,18 @@ export interface SankeyLayoutOptions {
   nodeSort?: 'auto' | 'fixed';
 }
 
+function alignLayer(node: SankeyInternalNode, n: number) {
+  return node.layer ?? sankeyJustify(node, n);
+}
+
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export function useSankeyLayout(
-  levels: Parameters<typeof extractGraph>[0],
+  { layers, nodes, links }: Parameters<typeof extractGraph>[0],
   {
     height = 300,
     padding = DEFAULT_PADDING,
     iterations = 6,
-    nodeAlign = 'justify',
+    nodeAlign = layers ? 'layer' : 'justify',
     nodePadding = 8,
     nodeWidth = 24,
     nodeSort = 'auto',
@@ -77,6 +81,7 @@ export function useSankeyLayout(
       right: sankeyRight,
       center: sankeyCenter,
       justify: sankeyJustify,
+      layer: alignLayer,
     };
     s.nodeId((n) => n.id);
     s.iterations(iterations)
@@ -88,7 +93,7 @@ export function useSankeyLayout(
     return s;
   }, [p, width, height, iterations, nodeAlign, nodeWidth, nodePadding, nodeSort]);
 
-  const graph = useMemo(() => extractGraph(levels), [levels]);
+  const graph = useMemo(() => extractGraph({ layers, nodes, links }), [layers, nodes, links]);
   const layoutGraph = useMemo(() => {
     if (graph.nodes.length === 0) {
       return {
@@ -105,14 +110,13 @@ export function useSankeyLayout(
     return {
       nodes: g.nodes,
       links: g.links,
-      layers: extractLayers(g.nodes, isArray(levels) ? levels : undefined),
+      layers: extractLayers(g.nodes, layers),
     };
-  }, [graph, sankeyGen, levels]);
+  }, [graph, sankeyGen, layers]);
 
-  const maxDepth = layoutGraph.nodes.reduce((acc, v) => Math.max(acc, v.depth ?? 0), 0);
   const maxLayerY1 = layoutGraph.layers.reduce((acc, v) => Math.max(acc, v.y1), 0);
 
-  return { ref, layoutGraph, graph, width, height, maxDepth, maxLayerY1, nodeWidth };
+  return { ref, layoutGraph, graph, width, height, maxLayerY1, nodeWidth };
 }
 
 const EMPTY_ARR: { color: string; ids: readonly SankeyID[] }[] = [];
@@ -184,7 +188,7 @@ export function useSelections(
     () => ({
       isSelected: (type, sId) =>
         hoveredSelection
-          ? hoveredSelection.id === sId && hoveredSelection.type == type
+          ? hoveredSelection.id === sId && hoveredSelection.type === type
           : isSelected(selection, type, sId),
       others: selectionsOverlaps,
       overlap: hoveredSelection?.overlap ?? selectionOverlap,

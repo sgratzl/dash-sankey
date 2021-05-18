@@ -9,10 +9,11 @@ const SankeyNode: FC<{
   node: SankeyInternalNode;
   selections: SankeySelections;
   nodeWidth: number;
-  maxDepth: number;
-}> = ({ node, selections, nodeWidth, maxDepth }) => {
+  nLayers: number;
+}> = ({ node, selections, nodeWidth, nLayers }) => {
   const overlap = selections.overlap.intersect(node.overlap);
   const nodeHeight = node.y1! - node.y0!;
+  const isLastLayer = node.layer! >= nLayers - 1;
   return (
     <g
       key={node.id}
@@ -51,10 +52,10 @@ const SankeyNode: FC<{
         />
       )}
       <text
-        x={node.depth! < maxDepth ? nodeWidth : 0}
+        x={!isLastLayer ? nodeWidth : 0}
         y={nodeHeight / 2}
-        dx={node.depth! < maxDepth ? 2 : -2}
-        className={classNames('dash-sankey-node-name', node.depth! >= maxDepth && 'dash-sankey-node-name__last')}
+        dx={!isLastLayer ? 2 : -2}
+        className={classNames('dash-sankey-node-name', isLastLayer && 'dash-sankey-node-name__last')}
       >
         {node.name}
       </text>

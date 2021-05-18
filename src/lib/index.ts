@@ -5,7 +5,7 @@ export type {
   DashChangeAbleSankeyProps,
   DashReadOnlyLayoutSankeyProps,
   DashSankeyProps,
-  SankeyLevel,
+  SankeyLayer,
   SankeyLink,
   SankeyID,
   SankeySelection,

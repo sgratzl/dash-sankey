@@ -30,14 +30,18 @@ jobs:
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
-      - run: |
+      - name: Install Dependencies
+        run: |
           python -m venv venv
           pip install -r requirements.txt
+          pip install -r requirements-dev.txt
           pip install -r tests/requirements.txt
-      - run: |
+      - name: Build Backends
+        run: |
           . venv/bin/activate
           npm run build:backends
-      - run: |
+      - name: Build binaries
+        run: |
           . venv/bin/activate
           python setup.py sdist bdist_wheel
       - uses: actions/upload-artifact@v2
@@ -48,7 +52,8 @@ jobs:
         with:
           name: dash_sankey-py3-none-any.whl
           path: dist/dash_sankey*-py3-none-any.whl
-      - run: |
+      - name: Create binaries
+        run: |
           mkdir -p binaries/src
           cp -r dash_sankey deps inst man R .Rbuildignore DESCRIPTION NAMESPACE Project.toml setup.py package.json ./binaries/
           cp -r src/*.jl ./binaries/src/

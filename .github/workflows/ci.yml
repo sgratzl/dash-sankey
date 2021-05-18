@@ -37,3 +37,14 @@ jobs:
       - run: |
           . venv/bin/activate
           npm run build:backends
+      - run: |
+          . venv/bin/activate
+          python setup.py sdist bdist_wheel
+      - uses: actions/upload-artifact@v2
+        with:
+          name: dash_sankey.tar.gz
+          path: dist/dash_sankey*.tar.gz
+      - uses: actions/upload-artifact@v2
+        with:
+          name: dash_sankey-py3-none-any.whl
+          path: dist/dash_sankey*-py3-none-any.whl

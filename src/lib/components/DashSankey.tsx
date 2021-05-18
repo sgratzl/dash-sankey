@@ -11,6 +11,7 @@ import {
   extractLayers,
   isSelected,
   SankeyID,
+  SankeyInternalLayer,
   SankeyInternalLink,
   SankeyInternalNode,
   SankeyLevel,
@@ -142,6 +143,220 @@ function useSankeyLayout({
   return { ref, layoutGraph, width, height, maxDepth, maxLayerY1, nodeWidth };
 }
 
+interface SankeySelections {
+  overlap: OverlapHelper<SankeyID>;
+  isSelected(type: SankeySelection['type'], id: string): boolean;
+  select(
+    type: SankeySelection['type'],
+    id: string,
+    ids: readonly SankeyID[] | OverlapHelper<SankeyID>
+  ): (e: React.MouseEvent) => void;
+  others: { overlap: OverlapHelper<SankeyID>; color: string }[];
+}
+
+function SankeyLink({
+  link,
+  lineOffset,
+  selections,
+}: {
+  link: SankeyInternalLink;
+  lineOffset: number;
+  selections: SankeySelections;
+}) {
+  const overlap = selections.overlap.intersect(link.overlap);
+  return (
+    <g key={link.id} onClick={selections.select('link', link.id, link.overlap.elems)}>
+      <path
+        d={pathGen(link, lineOffset, 1)}
+        className={classNames('dash-sankey-link', selections.isSelected('link', link.id) && 'dash-sankey-link__picked')}
+      />
+      <title>
+        {link.name}: {link.value.toLocaleString()}
+      </title>
+      {selections.others.map((s) => {
+        const o = s.overlap.intersect(link.overlap);
+        if (o.isEmpty) {
+          return null;
+        }
+        return (
+          <path
+            key={s.color}
+            d={pathGen(link, lineOffset, o.size / link.overlap.size)}
+            className="dash-sankey-link"
+            style={{ fill: s.color }}
+          />
+        );
+      })}
+      {overlap.isNotEmpty && (
+        <path
+          d={pathGen(link, lineOffset, overlap.size / link.overlap.size)}
+          className="dash-sankey-link dash-sankey-link__selected"
+        />
+      )}
+    </g>
+  );
+}
+
+function SankeyMissingLink({
+  node,
+  maxDepth,
+  selections,
+  lineOffset,
+}: {
+  node: SankeyInternalNode;
+  maxDepth: number;
+  selections: SankeySelections;
+  lineOffset: number;
+}) {
+  if (node.missing.isEmpty || node.depth! >= maxDepth) {
+    return null;
+  }
+  const overlap = selections.overlap.intersect(node.missing);
+  return (
+    <g key={node.id} onClick={selections.select('missing', node.id, node.missing)}>
+      <path
+        d={missingPath(node, lineOffset, 1)}
+        className={classNames(
+          'dash-sankey-link dash-sankey-link__missing',
+          selections.isSelected('missing', node.id) && 'dash-sankey-link__picked'
+        )}
+      />
+      <title>
+        {node.name} → ?: {node.missing.length.toLocaleString()}
+      </title>
+      {selections.others.map((s) => {
+        const o = s.overlap.intersect(node.missing);
+        if (o.isEmpty) {
+          return null;
+        }
+        return (
+          <path
+            key={s.color}
+            d={missingPath(node, lineOffset, o.size / node.missing.size)}
+            className="dash-sankey-link dash-sankey-link__missing"
+            style={{ fill: s.color }}
+          />
+        );
+      })}
+      {overlap.isNotEmpty && (
+        <path
+          d={missingPath(node, lineOffset, overlap.size / node.missing.size)}
+          className="dash-sankey-link dash-sankey-link__missing dash-sankey-link__selected"
+        />
+      )}
+    </g>
+  );
+}
+
+function SankeyLayer({
+  layer,
+  i,
+  lineOffset,
+  maxLayerY1,
+  nLayers,
+  nodeWidth,
+  selections,
+}: {
+  i: number;
+  layer: SankeyInternalLayer;
+  maxLayerY1: number;
+  nodeWidth: number;
+  nLayers: number;
+  selections: SankeySelections;
+  lineOffset: number;
+}) {
+  const layerHeight = maxLayerY1 - layer.y0;
+  let x = i > 0 ? nodeWidth / 2 : 0;
+  if (i === nLayers - 1) {
+    x = nodeWidth;
+  }
+  return (
+    <g
+      key={layer.id}
+      transform={`translate(${layer.x0!},${layer.y0!})`}
+      onClick={selections.select('layer', layer.id, layer.overlap)}
+      className={classNames(selections.isSelected('layer', layer.id) && 'dash-sankey-layer__picked')}
+    >
+      <text
+        x={x}
+        y={layerHeight}
+        dy={lineOffset + 2}
+        className={classNames(
+          'dash-sankey-layer-name',
+          i === 0 && 'dash-sankey-layer-name__first',
+          i === nLayers - 1 && 'dash-sankey-layer-name__last'
+        )}
+      >
+        {layer.name}
+      </text>
+      <title>
+        {layer.name}: {layer.overlap.length.toLocaleString()}
+      </title>
+    </g>
+  );
+}
+
+function SankeyNode({
+  node,
+  selections,
+  nodeWidth,
+  maxDepth,
+}: {
+  node: SankeyInternalNode;
+  selections: SankeySelections;
+  nodeWidth: number;
+  maxDepth: number;
+}) {
+  const overlap = selections.overlap.intersect(node.overlap);
+  const nodeHeight = node.y1! - node.y0!;
+  return (
+    <g
+      key={node.id}
+      transform={`translate(${node.x0!},${node.y0!})`}
+      onClick={selections.select('node', node.id, node.ids)}
+    >
+      <rect
+        width={nodeWidth}
+        height={nodeHeight}
+        className={classNames('dash-sankey-node', selections.isSelected('node', node.id) && 'dash-sankey-node__picked')}
+      />
+      {selections.others.map((s) => {
+        const o = s.overlap.intersect(node.overlap);
+        if (o.isEmpty) {
+          return null;
+        }
+        return (
+          <rect
+            key={s.color}
+            width={nodeWidth}
+            height={nodeHeight * (o.size / node.overlap.size)}
+            className="dash-sankey-node"
+            style={{ fill: s.color }}
+          />
+        );
+      })}
+      {overlap.isNotEmpty && (
+        <rect
+          width={nodeWidth}
+          height={nodeHeight * (overlap.size / node.overlap.size)}
+          className="dash-sankey-node dash-sankey-node__selected"
+        />
+      )}
+      <text
+        x={node.depth! < maxDepth ? nodeWidth : 0}
+        y={nodeHeight / 2}
+        dx={node.depth! < maxDepth ? 2 : -2}
+        className={classNames('dash-sankey-node-name', node.depth! >= maxDepth && 'dash-sankey-node-name__last')}
+      >
+        {node.name}
+      </text>
+      <title>
+        {node.name}: {node.value!.toLocaleString()}
+      </title>
+    </g>
+  );
+}
+
 /**
  * DashSankey shows an interactive parallel set / sankey diagram
  */
@@ -186,179 +401,59 @@ const DashSankey: FC<DashSankeyProps> = (props) => {
   const resetSelection = useCallback(() => {
     setProps({ selection: [] });
   }, [setProps]);
+
+  const selectionContext: SankeySelections = useMemo(
+    () => ({
+      isSelected: (type, sId) => isSelected(selection, type, sId),
+      others: selectionsOverlaps,
+      overlap: selectionOverlap,
+      select,
+    }),
+    [select, selectionOverlap, selectionsOverlaps, selection]
+  );
+
   return (
     <div ref={ref} id={id}>
       <svg width={width} height={height} className="dash-sankey" onClick={resetSelection}>
         <g className="dash-sankey-links">
-          {layoutGraph.links.map((link) => {
-            const overlap = selectionOverlap.intersect(link.overlap);
-            return (
-              <g key={link.id} onClick={select('link', link.id, link.overlap.elems)}>
-                <path
-                  d={pathGen(link, lineOffset, 1)}
-                  className={classNames(
-                    'dash-sankey-link',
-                    isSelected(selection, 'link', link.id) && 'dash-sankey-link__picked'
-                  )}
-                />
-                <title>
-                  {link.name}: {link.value.toLocaleString()}
-                </title>
-                {selectionsOverlaps.map((s) => {
-                  const o = s.overlap.intersect(link.overlap);
-                  if (o.isEmpty) {
-                    return null;
-                  }
-                  return (
-                    <path
-                      key={s.color}
-                      d={pathGen(link, lineOffset, o.size / link.overlap.size)}
-                      className="dash-sankey-link"
-                      style={{ fill: s.color }}
-                    />
-                  );
-                })}
-                {overlap.isNotEmpty && (
-                  <path
-                    d={pathGen(link, lineOffset, overlap.size / link.overlap.size)}
-                    className="dash-sankey-link dash-sankey-link__selected"
-                  />
-                )}
-              </g>
-            );
-          })}
-          {layoutGraph.nodes.map((node) => {
-            if (node.missing.isEmpty || node.depth! >= maxDepth) {
-              return null;
-            }
-            const overlap = selectionOverlap.intersect(node.missing);
-            return (
-              <g key={node.id} onClick={select('missing', node.id, node.missing)}>
-                <path
-                  d={missingPath(node, lineOffset, 1)}
-                  className={classNames(
-                    'dash-sankey-link dash-sankey-link__missing',
-                    isSelected(selection, 'missing', node.id) && 'dash-sankey-link__picked'
-                  )}
-                />
-                <title>
-                  {node.name} → ?: {node.missing.length.toLocaleString()}
-                </title>
-                {selectionsOverlaps.map((s) => {
-                  const o = s.overlap.intersect(node.missing);
-                  if (o.isEmpty) {
-                    return null;
-                  }
-                  return (
-                    <path
-                      key={s.color}
-                      d={missingPath(node, lineOffset, o.size / node.missing.size)}
-                      className="dash-sankey-link dash-sankey-link__missing"
-                      style={{ fill: s.color }}
-                    />
-                  );
-                })}
-                {overlap.isNotEmpty && (
-                  <path
-                    d={missingPath(node, lineOffset, overlap.size / node.missing.size)}
-                    className="dash-sankey-link dash-sankey-link__missing dash-sankey-link__selected"
-                  />
-                )}
-              </g>
-            );
-          })}
+          {layoutGraph.links.map((link) => (
+            <SankeyLink key={link.id} selections={selectionContext} link={link} lineOffset={lineOffset} />
+          ))}
+          {layoutGraph.nodes.map((node) => (
+            <SankeyMissingLink
+              key={node.id}
+              selections={selectionContext}
+              node={node}
+              maxDepth={maxDepth}
+              lineOffset={lineOffset}
+            />
+          ))}
         </g>
         <g className="dash-sankey-layers">
-          {layoutGraph.layers.map((layer, i) => {
-            const layerHeight = maxLayerY1 - layer.y0;
-            let x = i > 0 ? nodeWidth / 2 : 0;
-            if (i === layoutGraph.layers.length - 1) {
-              x = nodeWidth;
-            }
-            return (
-              <g
-                key={layer.id}
-                transform={`translate(${layer.x0!},${layer.y0!})`}
-                onClick={select('layer', layer.id, layer.overlap)}
-                className={classNames(isSelected(selection, 'layer', layer.id) && 'dash-sankey-layer__picked')}
-              >
-                <text
-                  x={x}
-                  y={layerHeight}
-                  dy={lineOffset + 2}
-                  className={classNames(
-                    'dash-sankey-layer-name',
-                    i === 0 && 'dash-sankey-layer-name__first',
-                    i === layoutGraph.layers.length - 1 && 'dash-sankey-layer-name__last'
-                  )}
-                >
-                  {layer.name}
-                </text>
-                <title>
-                  {layer.name}: {layer.overlap.length.toLocaleString()}
-                </title>
-              </g>
-            );
-          })}
+          {layoutGraph.layers.map((layer, i) => (
+            <SankeyLayer
+              key={layer.id}
+              selections={selectionContext}
+              layer={layer}
+              maxLayerY1={maxLayerY1}
+              i={i}
+              nLayers={layoutGraph.layers.length}
+              nodeWidth={nodeWidth}
+              lineOffset={lineOffset}
+            />
+          ))}
         </g>
 
         <g className="dash-sankey-nodes">
-          {layoutGraph.nodes.map((node) => {
-            const overlap = selectionOverlap.intersect(node.overlap);
-            const nodeHeight = node.y1! - node.y0!;
-            return (
-              <g
-                key={node.id}
-                transform={`translate(${node.x0!},${node.y0!})`}
-                onClick={select('node', node.id, node.ids)}
-              >
-                <rect
-                  width={nodeWidth}
-                  height={nodeHeight}
-                  className={classNames(
-                    'dash-sankey-node',
-                    isSelected(selection, 'node', node.id) && 'dash-sankey-node__picked'
-                  )}
-                />
-                {selectionsOverlaps.map((s) => {
-                  const o = s.overlap.intersect(node.overlap);
-                  if (o.isEmpty) {
-                    return null;
-                  }
-                  return (
-                    <rect
-                      key={s.color}
-                      width={nodeWidth}
-                      height={nodeHeight * (o.size / node.overlap.size)}
-                      className="dash-sankey-node"
-                      style={{ fill: s.color }}
-                    />
-                  );
-                })}
-                {overlap.isNotEmpty && (
-                  <rect
-                    width={nodeWidth}
-                    height={nodeHeight * (overlap.size / node.overlap.size)}
-                    className="dash-sankey-node dash-sankey-node__selected"
-                  />
-                )}
-                <text
-                  x={node.depth! < maxDepth ? nodeWidth : 0}
-                  y={nodeHeight / 2}
-                  dx={node.depth! < maxDepth ? 2 : -2}
-                  className={classNames(
-                    'dash-sankey-node-name',
-                    node.depth! >= maxDepth && 'dash-sankey-node-name__last'
-                  )}
-                >
-                  {node.name}
-                </text>
-                <title>
-                  {node.name}: {node.value!.toLocaleString()}
-                </title>
-              </g>
-            );
-          })}
+          {layoutGraph.nodes.map((node) => (
+            <SankeyNode
+              key={node.id}
+              selections={selectionContext}
+              node={node}
+              maxDepth={maxDepth}
+              nodeWidth={nodeWidth}
+            />
+          ))}
         </g>
         {children}
       </svg>

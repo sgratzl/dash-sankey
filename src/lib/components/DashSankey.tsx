@@ -1,3 +1,4 @@
+/* eslint-disable react/destructuring-assignment */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import React, { FC, useCallback, useMemo } from 'react';
 import PropTypes from 'prop-types';
@@ -80,25 +81,16 @@ export type DashSankeyProps = DashReadOnlyLayoutSankeyProps &
     children?: React.ReactNode;
   };
 
-/**
- * DashSankey shows an interactive parallel set / sankey diagram
- */
-const DashSankey: FC<DashSankeyProps> = ({
-  id,
-  setProps = noop,
+function useSankeyLayout({
+  levels,
   height = 300,
   padding = DEFAULT_PADDING,
-  lineOffset = 5,
   iterations = 6,
   nodeAlign = 'justify',
   nodePadding = 8,
   nodeWidth = 24,
   nodeSort = 'auto',
-  levels,
-  children,
-  selection,
-  selections,
-}) => {
+}: Omit<DashReadOnlyLayoutSankeyProps, 'lineOffset'> & { levels: SankeyLevel[] }) {
   const p = useMemo(() => deriveBox(padding, DEFAULT_PADDING), [padding]);
   const { ref, width = p.left + p.right + 10 } = useResizeObserver<HTMLDivElement>();
   const sankeyGen = useMemo(() => {
@@ -123,15 +115,6 @@ const DashSankey: FC<DashSankeyProps> = ({
     return s;
   }, [p, width, height, iterations, nodeAlign, nodeWidth, nodePadding, nodeSort]);
 
-  const selectionOverlap = useMemo(
-    () => new OverlapHelper(isArray(selection) ? selection : selection?.ids ?? []),
-    [selection]
-  );
-  const selectionsOverlaps = useMemo(
-    () => (selections ?? []).map((s) => ({ ...s, overlap: new OverlapHelper(s.ids) })),
-    [selections]
-  );
-
   const graph = useMemo(() => extractGraph(levels), [levels]);
   const layoutGraph = useMemo(() => {
     if (levels.length === 0) {
@@ -155,6 +138,34 @@ const DashSankey: FC<DashSankeyProps> = ({
 
   const maxDepth = layoutGraph.nodes.reduce((acc, v) => Math.max(acc, v.depth ?? 0), 0);
   const maxLayerY1 = layoutGraph.layers.reduce((acc, v) => Math.max(acc, v.y1), 0);
+
+  return { ref, layoutGraph, width, height, maxDepth, maxLayerY1, nodeWidth };
+}
+
+/**
+ * DashSankey shows an interactive parallel set / sankey diagram
+ */
+const DashSankey: FC<DashSankeyProps> = (props) => {
+  const { id, setProps = noop, lineOffset = 5, children, selection, selections } = props;
+  const { ref, width, height, layoutGraph, maxDepth, maxLayerY1, nodeWidth } = useSankeyLayout({
+    levels: props.levels,
+    height: props.height,
+    iterations: props.iterations,
+    nodeAlign: props.nodeAlign,
+    nodePadding: props.nodePadding,
+    nodeSort: props.nodeSort,
+    nodeWidth: props.nodeWidth,
+    padding: props.padding,
+  });
+
+  const selectionOverlap = useMemo(
+    () => new OverlapHelper(isArray(selection) ? selection : selection?.ids ?? []),
+    [selection]
+  );
+  const selectionsOverlaps = useMemo(
+    () => (selections ?? []).map((s) => ({ ...s, overlap: new OverlapHelper(s.ids) })),
+    [selections]
+  );
 
   const select = useCallback(
     (type: SankeySelection['type'], selectionId: string, ids: readonly SankeyID[] | OverlapHelper<SankeyID>) => {

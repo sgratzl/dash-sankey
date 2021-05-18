@@ -60,4 +60,3 @@ jobs:
           publish_dir: ./binaries
           publish_branch: binaries
           force_orphan: true
-

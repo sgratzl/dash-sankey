@@ -36,3 +36,7 @@ requirements.txt
 /dash_sankey
 /package-lock.json
 /dash_sankey.egg-info
+/binaries
+/src/**/*.js
+/dist
+/.eggs

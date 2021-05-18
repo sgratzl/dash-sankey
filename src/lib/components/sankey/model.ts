@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import type { SankeyLink as SankeyLinkImpl, SankeyNode as SankeyNodeImpl } from 'd3-sankey';
-import { IBox, isArray, OverlapHelper } from '../utils';
+import { IBox, isArray, OverlapHelper } from '../../utils';
 
 export type SankeyID = string | number;
 

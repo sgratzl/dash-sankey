@@ -1,6 +1,18 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { area, curveMonotoneX } from 'd3-shape';
-import type { SankeyInternalLink, SankeyInternalNode } from './model';
+import type { OverlapHelper } from 'src/lib/utils';
+import type { SankeyID, SankeyInternalLink, SankeyInternalNode, SankeySelection } from './model';
+
+export interface SankeySelections {
+  overlap: OverlapHelper<SankeyID>;
+  isSelected(type: SankeySelection['type'], id: string): boolean;
+  select(
+    type: SankeySelection['type'],
+    id: string,
+    ids: readonly SankeyID[] | OverlapHelper<SankeyID>
+  ): (e: React.MouseEvent) => void;
+  others: { overlap: OverlapHelper<SankeyID>; color: string }[];
+}
 
 export function pathGen(link: SankeyInternalLink, lineOffset: number, fraction: number): string {
   const base = -link.width! / 2;

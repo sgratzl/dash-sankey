@@ -32,7 +32,7 @@ const SankeyMissingInLink: FC<{
         )}
       />
       <title>
-        {node.name} → ?: {node.missingIn.length.toLocaleString()}
+        ? → {node.name}: {node.missingIn.length.toLocaleString()}
       </title>
       {selections.others.map((s) => {
         const o = s.overlap.intersect(node.missingIn);

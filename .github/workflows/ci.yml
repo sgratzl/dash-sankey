@@ -40,6 +40,7 @@ jobs:
         run: |
           . venv/bin/activate
           npm run build:backends
+          npm run clean:compile
       - name: Build binaries
         run: |
           . venv/bin/activate

@@ -9,7 +9,6 @@ import {
   SankeyID,
   SankeyInternalLink,
   SankeyInternalNode,
-  SankeyLevel,
   SankeySelection,
 } from './model';
 
@@ -54,7 +53,7 @@ export interface SankeyLayoutOptions {
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export function useSankeyLayout(
-  levels: SankeyLevel[],
+  levels: Parameters<typeof extractGraph>[0],
   {
     height = 300,
     padding = DEFAULT_PADDING,
@@ -91,7 +90,7 @@ export function useSankeyLayout(
 
   const graph = useMemo(() => extractGraph(levels), [levels]);
   const layoutGraph = useMemo(() => {
-    if (levels.length === 0) {
+    if (graph.nodes.length === 0) {
       return {
         nodes: [],
         links: [],
@@ -106,7 +105,7 @@ export function useSankeyLayout(
     return {
       nodes: g.nodes,
       links: g.links,
-      layers: extractLayers(g.nodes, levels),
+      layers: extractLayers(g.nodes, isArray(levels) ? levels : undefined),
     };
   }, [graph, sankeyGen, levels]);
 

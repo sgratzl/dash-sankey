@@ -4,7 +4,6 @@ import DashSankey from './components/DashSankey';
 export type {
   DashChangeAbleSankeyProps,
   DashReadOnlyLayoutSankeyProps,
-  DashReadOnlySankeyProps,
   DashSankeyProps,
   SankeyLevel,
   SankeyLink,

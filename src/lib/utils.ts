@@ -41,6 +41,9 @@ export class OverlapHelper<T> {
     if (this.isEmpty) {
       return new OverlapHelper(new Set<T>());
     }
+    if (this === v) {
+      return this.copy();
+    }
 
     const r = new Set<T>();
     if (v instanceof OverlapHelper) {
@@ -64,7 +67,7 @@ export class OverlapHelper<T> {
   }
 
   intersectUpdate(v: Iterable<T> | OverlapHelper<T>): void {
-    if (this.isEmpty) {
+    if (this.isEmpty || this === v) {
       return;
     }
     this.givenIds = null;
@@ -103,6 +106,9 @@ export class OverlapHelper<T> {
   }
 
   addUpdate(v: OverlapHelper<T>): void {
+    if (this === v || v.isEmpty) {
+      return;
+    }
     this.givenIds = null;
     for (const vi of v.set) {
       this.set.add(vi);
@@ -144,3 +150,6 @@ export function isArray<T>(a: unknown): a is readonly T[] {
 export function noop(): void {
   // dummy
 }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const EMPTY_ARR: any[] = [];

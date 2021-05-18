@@ -1,15 +1,23 @@
 /* eslint-disable react/destructuring-assignment */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import PropTypes from 'prop-types';
-import React, { FC } from 'react';
-import { PADDING_PROP_TYPES } from '../utils';
+import React, { FC, Fragment, useMemo } from 'react';
+import { EMPTY_ARR, PADDING_PROP_TYPES } from '../utils';
 import './DashSankey.css';
 import { SankeyLayoutOptions, useSankeyLayout, useSelections } from '../internal/sankey/hooks';
-import { DEFAULT_PADDING, SankeyID, SankeyLevel, SankeySelection } from '../internal/sankey/model';
-import SankeyLayer from '../internal/sankey/SankeyLayer';
-import SankeyLink from '../internal/sankey/SankeyLink';
-import SankeyMissingLink from '../internal/sankey/SankeyMissingLink';
-import SankeyNode from '../internal/sankey/SankeyNode';
+import {
+  DEFAULT_PADDING,
+  SankeyID,
+  SankeyLevel,
+  SankeySelection,
+  SankeyLink,
+  SankeyNode,
+} from '../internal/sankey/model';
+import SankeyLayerC from '../internal/sankey/SankeyLayer';
+import SankeyLinkC from '../internal/sankey/SankeyLink';
+import SankeyMissingInLink from '../internal/sankey/SankeyMissingInLink';
+import SankeyMissingOutLink from '../internal/sankey/SankeyMissingOutLink';
+import SankeyNodeC from '../internal/sankey/SankeyNode';
 
 export type { SankeyID, SankeyLevel, SankeyLink, SankeyNode, SankeySelection } from '../internal/sankey/model';
 
@@ -24,15 +32,12 @@ export interface DashReadOnlyLayoutSankeyProps extends SankeyLayoutOptions {
    */
   lineOffset?: number;
 }
-
-export interface DashReadOnlySankeyProps {
-  levels: SankeyLevel[];
-  selections?: { color: string; ids: readonly SankeyID[] }[];
-}
-
-export type DashSankeyProps = DashReadOnlyLayoutSankeyProps &
-  DashReadOnlySankeyProps &
-  DashChangeAbleSankeyProps & {
+export type DashSankeyProps = DashReadOnlyLayoutSankeyProps & {
+  levels?: readonly SankeyLevel[];
+  nodes?: readonly SankeyNode[];
+  links?: readonly SankeyLink[];
+} & DashChangeAbleSankeyProps & {
+    selections?: { color: string; ids: readonly SankeyID[] }[];
     id?: string;
     setProps?(props: DashChangeAbleSankeyProps): void;
     children?: React.ReactNode;
@@ -42,8 +47,13 @@ export type DashSankeyProps = DashReadOnlyLayoutSankeyProps &
  * DashSankey shows an interactive parallel set / sankey diagram
  */
 const DashSankey: FC<DashSankeyProps> = (props) => {
-  const { id, lineOffset = 5, children, levels } = props;
-  const { ref, width, height, layoutGraph, maxDepth, maxLayerY1, nodeWidth, graph } = useSankeyLayout(levels, {
+  const { id, lineOffset = 5, children, levels, nodes, links } = props;
+  const resolvedData = useMemo(
+    () => levels ?? { nodes: nodes ?? EMPTY_ARR, links: links ?? EMPTY_ARR },
+    [levels, nodes, links]
+  );
+
+  const { ref, width, height, layoutGraph, maxDepth, maxLayerY1, nodeWidth, graph } = useSankeyLayout(resolvedData, {
     height: props.height,
     iterations: props.iterations,
     nodeAlign: props.nodeAlign,
@@ -63,21 +73,24 @@ const DashSankey: FC<DashSankeyProps> = (props) => {
       <svg width={width} height={height} className="dash-sankey" onClick={resetSelection}>
         <g className="dash-sankey-links">
           {layoutGraph.links.map((link) => (
-            <SankeyLink key={link.id} selections={selections} link={link} lineOffset={lineOffset} />
+            <SankeyLinkC key={link.id} selections={selections} link={link} lineOffset={lineOffset} />
           ))}
           {layoutGraph.nodes.map((node) => (
-            <SankeyMissingLink
-              key={node.id}
-              selections={selections}
-              node={node}
-              maxDepth={maxDepth}
-              lineOffset={lineOffset}
-            />
+            <Fragment key={node.id}>
+              <SankeyMissingInLink selections={selections} node={node} lineOffset={lineOffset} />
+              <SankeyMissingOutLink
+                key={node.id}
+                selections={selections}
+                node={node}
+                maxDepth={maxDepth}
+                lineOffset={lineOffset}
+              />
+            </Fragment>
           ))}
         </g>
         <g className="dash-sankey-layers">
           {layoutGraph.layers.map((layer, i) => (
-            <SankeyLayer
+            <SankeyLayerC
               key={layer.id}
               selections={selections}
               layer={layer}
@@ -92,7 +105,7 @@ const DashSankey: FC<DashSankeyProps> = (props) => {
 
         <g className="dash-sankey-nodes">
           {layoutGraph.nodes.map((node) => (
-            <SankeyNode key={node.id} selections={selections} node={node} maxDepth={maxDepth} nodeWidth={nodeWidth} />
+            <SankeyNodeC key={node.id} selections={selections} node={node} maxDepth={maxDepth} nodeWidth={nodeWidth} />
           ))}
         </g>
         {children}
@@ -116,17 +129,35 @@ DashSankey.defaultProps = {
   children: [],
   selection: undefined,
   selections: undefined,
+  levels: undefined,
+  nodes: undefined,
+  links: undefined,
 };
 
 const ID_ARRAY = PropTypes.arrayOf(
   PropTypes.oneOfType([PropTypes.string.isRequired, PropTypes.number.isRequired]).isRequired
 ).isRequired;
 
+const NODE_ARR = PropTypes.arrayOf(
+  PropTypes.shape({
+    id: PropTypes.string.isRequired,
+    name: PropTypes.string.isRequired,
+    ids: ID_ARRAY,
+  }).isRequired
+);
+const LINK_ARR = PropTypes.arrayOf(
+  PropTypes.shape({
+    source: PropTypes.string.isRequired,
+    target: PropTypes.string.isRequired,
+    ids: ID_ARRAY,
+  }).isRequired
+);
+
 const SELECTION_PROP_TYPE = PropTypes.oneOfType([
   ID_ARRAY,
   PropTypes.shape({
     id: PropTypes.string.isRequired,
-    type: PropTypes.oneOf<'node' | 'link' | 'missing' | 'layer'>(['node', 'link', 'missing', 'layer']).isRequired,
+    type: PropTypes.oneOf<SankeySelection['type']>(['node', 'link', 'missing_in', 'missing_out', 'layer']).isRequired,
     ids: ID_ARRAY,
   }),
 ]);
@@ -202,7 +233,9 @@ DashSankey.propTypes = {
         }).isRequired
       ).isRequired,
     }).isRequired
-  ).isRequired,
+  ),
+  nodes: NODE_ARR as React.Validator<readonly SankeyNode[]> | undefined,
+  links: LINK_ARR as React.Validator<readonly SankeyLink[]> | undefined,
 
   /**
    * the selection to highlight

@@ -4,14 +4,14 @@ import PropTypes from 'prop-types';
 import React, { FC } from 'react';
 import { PADDING_PROP_TYPES } from '../utils';
 import './DashSankey.css';
-import { SankeyLayoutOptions, useSankeyLayout, useSelections } from './sankey/hooks';
-import { DEFAULT_PADDING, SankeyID, SankeyLevel, SankeySelection } from './sankey/model';
-import SankeyLayer from './sankey/SankeyLayer';
-import SankeyLink from './sankey/SankeyLink';
-import SankeyMissingLink from './sankey/SankeyMissingLink';
-import SankeyNode from './sankey/SankeyNode';
+import { SankeyLayoutOptions, useSankeyLayout, useSelections } from '../internal/sankey/hooks';
+import { DEFAULT_PADDING, SankeyID, SankeyLevel, SankeySelection } from '../internal/sankey/model';
+import SankeyLayer from '../internal/sankey/SankeyLayer';
+import SankeyLink from '../internal/sankey/SankeyLink';
+import SankeyMissingLink from '../internal/sankey/SankeyMissingLink';
+import SankeyNode from '../internal/sankey/SankeyNode';
 
-export type { SankeyID, SankeyLevel, SankeyLink, SankeyNode, SankeySelection } from './sankey/model';
+export type { SankeyID, SankeyLevel, SankeyLink, SankeyNode, SankeySelection } from '../internal/sankey/model';
 
 export interface DashChangeAbleSankeyProps {
   selection?: SankeySelection | readonly SankeyID[];

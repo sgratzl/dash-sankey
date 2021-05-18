@@ -2,7 +2,7 @@
 import React, { FC } from 'react';
 import { classNames } from '../../utils';
 import type { SankeyInternalLayer } from './model';
-import type { SankeySelections } from './renderUtils';
+import type { SankeySelections } from './hooks';
 
 const SankeyLayer: FC<{
   i: number;
@@ -22,7 +22,11 @@ const SankeyLayer: FC<{
     <g
       key={layer.id}
       transform={`translate(${layer.x0 ?? 0},${layer.y0 ?? 0})`}
-      onClick={selections.select('layer', layer.id, layer.overlap)}
+      data-type="layer"
+      data-id={layer.id}
+      onClick={selections.onClick}
+      onMouseEnter={selections.onMouseEnter}
+      onMouseLeave={selections.onMouseLeave}
       className={classNames(selections.isSelected('layer', layer.id) && 'dash-sankey-layer__picked')}
     >
       <text

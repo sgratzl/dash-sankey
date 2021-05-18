@@ -42,9 +42,8 @@ export type DashSankeyProps = DashReadOnlyLayoutSankeyProps &
  * DashSankey shows an interactive parallel set / sankey diagram
  */
 const DashSankey: FC<DashSankeyProps> = (props) => {
-  const { id, lineOffset = 5, children } = props;
-  const { ref, width, height, layoutGraph, maxDepth, maxLayerY1, nodeWidth } = useSankeyLayout({
-    levels: props.levels,
+  const { id, lineOffset = 5, children, levels } = props;
+  const { ref, width, height, layoutGraph, maxDepth, maxLayerY1, nodeWidth, graph } = useSankeyLayout(levels, {
     height: props.height,
     iterations: props.iterations,
     nodeAlign: props.nodeAlign,
@@ -53,7 +52,7 @@ const DashSankey: FC<DashSankeyProps> = (props) => {
     nodeWidth: props.nodeWidth,
     padding: props.padding,
   });
-  const { resetSelection, selections } = useSelections({
+  const { resetSelection, selections } = useSelections(graph, {
     selection: props.selection,
     setProps: props.setProps,
     selections: props.selections,

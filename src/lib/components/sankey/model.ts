@@ -93,16 +93,21 @@ export function extractGraph(levels: readonly SankeyLevel[]): {
   nodes: SankeyInternalNode[];
   links: SankeyInternalLink[];
   layers: SankeyInternalLayer[];
+  getOverlap(type: 'node' | 'missing' | 'link' | 'layer', id: string): OverlapHelper<SankeyID>;
 } {
+  const lookup = new Map<string, OverlapHelper<SankeyID>>();
   const nodes: SankeyInternalNode[] = [];
   const transformedLevels = levels.map((level) => {
     return level.nodes.map((d) => {
       const overlap = new OverlapHelper(d.ids);
+      lookup.set(`node:${d.id}`, overlap);
+      const missing = overlap.copy();
+      lookup.set(`missing:${d.id}`, missing);
       const n: SankeyInternalNode = {
         ...d,
         overlap,
         fixedValue: d.ids.length,
-        missing: overlap.copy(),
+        missing,
       };
       nodes.push(n);
       return n;
@@ -120,6 +125,7 @@ export function extractGraph(levels: readonly SankeyLevel[]): {
         lNode.missing.withoutUpdate(overlap);
 
         if (overlap.isNotEmpty) {
+          lookup.set(`link:${lNode.id}-${rNode.id}`, overlap);
           links.push({
             id: `${lNode.id}-${rNode.id}`,
             name: `${lNode.name} → ${rNode.name}`,
@@ -132,10 +138,19 @@ export function extractGraph(levels: readonly SankeyLevel[]): {
       }
     }
   }
+
+  const graphLayers = extractLayers(nodes, levels);
+  for (const layer of graphLayers) {
+    lookup.set(`layer:${layer.id}`, layer.overlap);
+  }
+
   return {
     nodes,
     links,
-    layers: extractLayers(nodes, levels),
+    layers: graphLayers,
+    getOverlap: (type, id) => {
+      return lookup.get(`${type}:${id}`) ?? new OverlapHelper<SankeyID>([]);
+    },
   };
 }
 

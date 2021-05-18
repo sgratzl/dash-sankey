@@ -1,8 +1,9 @@
 /* eslint-disable react/prop-types */
 import React, { FC } from 'react';
 import { classNames } from '../../utils';
+import type { SankeySelections } from './hooks';
 import type { SankeyInternalLink } from './model';
-import { SankeySelections, pathGen } from './renderUtils';
+import { pathGen } from './renderUtils';
 
 const SankeyLink: FC<{
   link: SankeyInternalLink;
@@ -11,7 +12,14 @@ const SankeyLink: FC<{
 }> = ({ link, lineOffset, selections }) => {
   const overlap = selections.overlap.intersect(link.overlap);
   return (
-    <g key={link.id} onClick={selections.select('link', link.id, link.overlap.elems)}>
+    <g
+      key={link.id}
+      data-type="link"
+      data-id={link.id}
+      onClick={selections.onClick}
+      onMouseEnter={selections.onMouseEnter}
+      onMouseLeave={selections.onMouseLeave}
+    >
       <path
         d={pathGen(link, lineOffset, 1)}
         className={classNames('dash-sankey-link', selections.isSelected('link', link.id) && 'dash-sankey-link__picked')}

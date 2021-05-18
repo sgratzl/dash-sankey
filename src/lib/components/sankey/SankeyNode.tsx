@@ -3,7 +3,7 @@
 import React, { FC } from 'react';
 import { classNames } from '../../utils';
 import type { SankeyInternalNode } from './model';
-import type { SankeySelections } from './renderUtils';
+import type { SankeySelections } from './hooks';
 
 const SankeyNode: FC<{
   node: SankeyInternalNode;
@@ -16,8 +16,12 @@ const SankeyNode: FC<{
   return (
     <g
       key={node.id}
+      data-type="node"
+      data-id={node.id}
       transform={`translate(${node.x0!},${node.y0!})`}
-      onClick={selections.select('node', node.id, node.ids)}
+      onClick={selections.onClick}
+      onMouseEnter={selections.onMouseEnter}
+      onMouseLeave={selections.onMouseLeave}
     >
       <rect
         width={nodeWidth}

@@ -7,15 +7,18 @@ export function classNames(...cs: (string | boolean | null | undefined)[]): stri
 export class OverlapHelper<T> {
   private readonly set: Set<T>;
 
+  private givenIds: T[] | null;
+
   readonly has: (v: T) => boolean;
 
   constructor(ids: Iterable<T> | Set<T>) {
     this.set = ids instanceof Set ? ids : new Set(ids);
+    this.givenIds = Array.isArray(ids) ? ids : null;
     this.has = this.set.has.bind(this.set);
   }
 
   get elems(): T[] {
-    return [...this.set];
+    return this.givenIds ?? [...this.set];
   }
 
   get isEmpty(): boolean {
@@ -57,13 +60,14 @@ export class OverlapHelper<T> {
   }
 
   copy(): OverlapHelper<T> {
-    return new OverlapHelper(new Set(this.set));
+    return new OverlapHelper(this.givenIds ?? new Set(this.set));
   }
 
   intersectUpdate(v: Iterable<T> | OverlapHelper<T>): void {
     if (this.isEmpty) {
       return;
     }
+    this.givenIds = null;
 
     if (v instanceof OverlapHelper) {
       if (v.isEmpty) {
@@ -89,6 +93,7 @@ export class OverlapHelper<T> {
     if (this.isEmpty || v.isEmpty) {
       return;
     }
+    this.givenIds = null;
 
     for (const elem of this.elems) {
       if (v.has(elem)) {
@@ -98,6 +103,7 @@ export class OverlapHelper<T> {
   }
 
   addUpdate(v: OverlapHelper<T>): void {
+    this.givenIds = null;
     for (const vi of v.set) {
       this.set.add(vi);
     }

@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import useResizeObserver from 'use-resize-observer';
 import { sankey, sankeyCenter, sankeyJustify, sankeyLeft, sankeyRight } from 'd3-sankey';
 import { deriveBox, IBox, isArray, noop, OverlapHelper } from '../../utils';
@@ -12,7 +12,6 @@ import {
   SankeyLevel,
   SankeySelection,
 } from './model';
-import type { SankeySelections } from './renderUtils';
 
 const DEFAULT_PADDING: IBox = { left: 5, top: 5, right: 5, bottom: 20 };
 
@@ -54,16 +53,18 @@ export interface SankeyLayoutOptions {
 }
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-export function useSankeyLayout({
-  levels,
-  height = 300,
-  padding = DEFAULT_PADDING,
-  iterations = 6,
-  nodeAlign = 'justify',
-  nodePadding = 8,
-  nodeWidth = 24,
-  nodeSort = 'auto',
-}: SankeyLayoutOptions & { levels: SankeyLevel[] }) {
+export function useSankeyLayout(
+  levels: SankeyLevel[],
+  {
+    height = 300,
+    padding = DEFAULT_PADDING,
+    iterations = 6,
+    nodeAlign = 'justify',
+    nodePadding = 8,
+    nodeWidth = 24,
+    nodeSort = 'auto',
+  }: SankeyLayoutOptions
+) {
   const p = useMemo(() => deriveBox(padding, DEFAULT_PADDING), [padding]);
   const { ref, width = p.left + p.right + 10 } = useResizeObserver<HTMLDivElement>();
   const sankeyGen = useMemo(() => {
@@ -112,58 +113,87 @@ export function useSankeyLayout({
   const maxDepth = layoutGraph.nodes.reduce((acc, v) => Math.max(acc, v.depth ?? 0), 0);
   const maxLayerY1 = layoutGraph.layers.reduce((acc, v) => Math.max(acc, v.y1), 0);
 
-  return { ref, layoutGraph, width, height, maxDepth, maxLayerY1, nodeWidth };
+  return { ref, layoutGraph, graph, width, height, maxDepth, maxLayerY1, nodeWidth };
 }
 
 const EMPTY_ARR: { color: string; ids: readonly SankeyID[] }[] = [];
 
+export interface SankeySelections {
+  overlap: OverlapHelper<SankeyID>;
+  isSelected(type: SankeySelection['type'], id: string): boolean;
+  onClick(e: React.MouseEvent<HTMLElement | SVGElement>): void;
+  onMouseEnter(e: React.MouseEvent<HTMLElement | SVGElement>): void;
+  onMouseLeave(e: React.MouseEvent<HTMLElement | SVGElement>): void;
+  others: { overlap: OverlapHelper<SankeyID>; color: string }[];
+}
+
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-export function useSelections({
-  selection,
-  selections = EMPTY_ARR,
-  setProps = noop,
-}: {
-  selection?: SankeySelection | readonly SankeyID[];
-  selections?: { color: string; ids: readonly SankeyID[] }[];
-  setProps?(props: { selection?: SankeySelection | readonly SankeyID[] }): void;
-}) {
-  const selectionOverlap = useMemo(
-    () => new OverlapHelper(isArray(selection) ? selection : selection?.ids ?? []),
-    [selection]
-  );
+export function useSelections(
+  graph: ReturnType<typeof extractGraph>,
+  {
+    selection,
+    selections = EMPTY_ARR,
+    setProps = noop,
+  }: {
+    selection?: SankeySelection | readonly SankeyID[];
+    selections?: { color: string; ids: readonly SankeyID[] }[];
+    setProps?(props: { selection?: SankeySelection | readonly SankeyID[] }): void;
+  }
+) {
   const selectionsOverlaps = useMemo(
     () => (selections ?? []).map((s) => ({ ...s, overlap: new OverlapHelper(s.ids) })),
     [selections]
-  );
-
-  const select = useCallback(
-    (type: SankeySelection['type'], selectionId: string, ids: readonly SankeyID[] | OverlapHelper<SankeyID>) => {
-      return (e: React.MouseEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const s: SankeySelection = {
-          id: selectionId,
-          type,
-          ids: ids instanceof OverlapHelper ? ids.elems : ids,
-        };
-        setProps({ selection: s });
-      };
-    },
-    [setProps]
   );
 
   const resetSelection = useCallback(() => {
     setProps({ selection: [] });
   }, [setProps]);
 
+  const selectionOverlap = useMemo(
+    () => new OverlapHelper(isArray(selection) ? selection : selection?.ids ?? []),
+    [selection]
+  );
+
+  const onClick = useCallback(
+    (e: React.MouseEvent<HTMLElement | SVGElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const id = e.currentTarget.dataset.id ?? '';
+      const type = (e.currentTarget.dataset.type ?? 'node') as SankeySelection['type'];
+      const overlap = graph.getOverlap(type, id);
+      setProps({ selection: { id, type, ids: overlap.elems } });
+    },
+    [graph, setProps]
+  );
+  const [hoveredSelection, setHoveredSelection] =
+    useState<{ id: string; type: string; overlap: OverlapHelper<SankeyID> } | null>(null);
+
+  const onMouseEnter = useCallback(
+    (e: React.MouseEvent<HTMLElement | SVGElement>) => {
+      const id = e.currentTarget.dataset.id ?? '';
+      const type = (e.currentTarget.dataset.type ?? 'node') as SankeySelection['type'];
+      const overlap = graph.getOverlap(type, id);
+      setHoveredSelection({ id, type, overlap });
+    },
+    [setHoveredSelection, graph]
+  );
+  const onMouseLeave = useCallback(() => {
+    setHoveredSelection(null);
+  }, [setHoveredSelection]);
+
   const selectionContext: SankeySelections = useMemo(
     () => ({
-      isSelected: (type, sId) => isSelected(selection, type, sId),
+      isSelected: (type, sId) =>
+        hoveredSelection
+          ? hoveredSelection.id === sId && hoveredSelection.type == type
+          : isSelected(selection, type, sId),
       others: selectionsOverlaps,
-      overlap: selectionOverlap,
-      select,
+      overlap: hoveredSelection?.overlap ?? selectionOverlap,
+      onClick,
+      onMouseEnter,
+      onMouseLeave,
     }),
-    [select, selectionOverlap, selectionsOverlaps, selection]
+    [onClick, onMouseEnter, onMouseLeave, hoveredSelection, selectionOverlap, selectionsOverlaps, selection]
   );
 
   return { selections: selectionContext, resetSelection };

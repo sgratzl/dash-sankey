@@ -1,8 +1,9 @@
 /* eslint-disable react/prop-types */
 import React, { FC } from 'react';
 import { classNames } from '../../utils';
+import type { SankeySelections } from './hooks';
 import type { SankeyInternalNode } from './model';
-import { SankeySelections, missingPath } from './renderUtils';
+import { missingPath } from './renderUtils';
 
 const SankeyMissingLink: FC<{
   node: SankeyInternalNode;
@@ -15,7 +16,14 @@ const SankeyMissingLink: FC<{
   }
   const overlap = selections.overlap.intersect(node.missing);
   return (
-    <g key={node.id} onClick={selections.select('missing', node.id, node.missing)}>
+    <g
+      key={node.id}
+      data-type="missing"
+      data-id={node.id}
+      onClick={selections.onClick}
+      onMouseEnter={selections.onMouseEnter}
+      onMouseLeave={selections.onMouseLeave}
+    >
       <path
         d={missingPath(node, lineOffset, 1)}
         className={classNames(

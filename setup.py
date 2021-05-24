@@ -21,6 +21,7 @@ setup(
     packages=[package_name],
     data_files=[
           (package_name, files),
+          ('', ['package.json']),
     ],
     license=package['license'],
     description=package.get('description', package_name),

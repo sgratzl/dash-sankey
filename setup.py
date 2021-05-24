@@ -7,6 +7,9 @@ from itertools import chain
 with open('package.json') as f:
     package = json.load(f)
 
+with open("README.md") as readme_file:
+    readme = readme_file.read()
+
 package_name = package["name"].replace(" ", "_").replace("-", "_")
 base = Path(package_name)
 
@@ -19,12 +22,11 @@ setup(
     author_email="sam@sgratzl.com",
     url=package['homepage'],
     packages=[package_name],
-    data_files=[
-          (package_name, files),
-          ('', ['package.json']),
-    ],
+    include_package_data=True,
     license=package['license'],
     description=package.get('description', package_name),
+    long_description=readme,
+    long_description_content_type="text/markdown",
     install_requires=[],
     classifiers = [
         'Framework :: Dash',

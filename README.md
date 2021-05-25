@@ -19,6 +19,7 @@ pip install git+https://github.com/sgratzl/dash-sankey@binaries#dash_sankey
 ```
 
 ### R
+
 ```R
 devtools::install_github("sgratzl/dash-sankey@binaries")
 ```
@@ -53,8 +54,8 @@ npm run fix
 ```
 
 ---
-OLD
 
+OLD
 
 ### Write your component code in `src/lib/components/DashSankey.react.js`.
 
@@ -99,7 +100,7 @@ OLD
    $ pip install dash_sankey-0.0.1.tar.gz
    ```
 
-5. Share your component with the community! https://community.plotly.com/c/dash
+4. Share your component with the community! https://community.plotly.com/c/dash
    1. Publish this repository to GitHub
    2. Tag your GitHub repository with the plotly-dash tag so that it appears here: https://github.com/topics/plotly-dash
    3. Create a post in the Dash community forum: https://community.plotly.com/c/dash

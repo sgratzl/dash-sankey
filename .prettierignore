@@ -22,6 +22,7 @@ __pycache__
 *.py
 *.min.js
 requirements.txt
+requirements-dev.txt
 /Project.toml
 *.ini
 *.in

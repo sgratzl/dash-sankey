@@ -1,42 +1,60 @@
-# dash-sankey
+# Dash Sankey
 
-dash-sankey is a Dash component library.
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-Get started with:
+## Usage
 
-1. Install Dash and its dependencies: https://dash.plotly.com/installation
-2. Run `python usage.py`
-3. Visit http://localhost:8050 in your web browser
+### Python
 
-## Contributing
+latest released version
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md)
+```sh
+pip install https://github.com/sgratzl/dash-sankey/releases/latest/download/dash_sankey.tar.gz
+```
+
+latest source code version
+
+```sh
+pip install git+https://github.com/sgratzl/dash-sankey@binaries#dash_sankey
+```
+
+### R
+```R
+devtools::install_github("sgratzl/dash-sankey@binaries")
+```
+
+### Julia
+
+```sh
+pkg
+add sgratzl/dash-sankey#binaries
+```
+
+## Development Environment
 
 ### Install dependencies
 
-If you have selected install_dependencies during the prompt, you can skip this part.
+Requirements: Python, Node
 
-1. Install npm packages
-   ```
-   $ npm install
-   ```
-2. Create a virtual env and activate.
+```sh
+npm install
+python -m venv venv
+. venv/bind/activate # or .\venv\Scripts\activate on Windows
+pip install -r requirements.txt -r requirements-dev.txt
+```
 
-   ```
-   $ virtualenv venv
-   $ . venv/bin/activate
-   ```
+### Commands
 
-   _Note: venv\Scripts\activate for windows_
+```sh
+npm start     # start test app
+npm run build # build the components, assumes an activated virtualenv
+npm run lint
+npm run fix
+```
 
-3. Install python packages required to build components.
-   ```
-   $ pip install -r requirements.txt
-   ```
-4. Install the python packages for testing (optional)
-   ```
-   $ pip install -r tests/requirements.txt
-   ```
+---
+OLD
+
 
 ### Write your component code in `src/lib/components/DashSankey.react.js`.
 
@@ -80,22 +98,6 @@ If you have selected install_dependencies during the prompt, you can skip this p
    ```
    $ pip install dash_sankey-0.0.1.tar.gz
    ```
-
-4. If it works, then you can publish the component to NPM and PyPI:
-
-   1. Publish on PyPI
-      ```
-      $ twine upload dist/*
-      ```
-   2. Cleanup the dist folder (optional)
-      ```
-      $ rm -rf dist
-      ```
-   3. Publish on NPM (Optional if chosen False in `publish_on_npm`)
-      ```
-      $ npm publish
-      ```
-      _Publishing your component to NPM will make the JavaScript bundles available on the unpkg CDN. By default, Dash serves the component library's CSS and JS locally, but if you choose to publish the package to NPM you can set `serve_locally` to `False` and you may see faster load times._
 
 5. Share your component with the community! https://community.plotly.com/c/dash
    1. Publish this repository to GitHub

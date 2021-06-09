@@ -19,6 +19,7 @@ export interface SankeyLayer {
 }
 
 export interface SankeyLink {
+  id?: string;
   source: string;
   target: string;
   ids?: readonly SankeyID[];
@@ -136,15 +137,21 @@ export function extractGraph(data: {
     return n;
   }
 
-  function asLink(source: SankeyInternalNode, target: SankeyInternalNode, overlap: OverlapHelper<SankeyID>) {
+  function asLink(
+    source: SankeyInternalNode,
+    target: SankeyInternalNode,
+    overlap: OverlapHelper<SankeyID>,
+    id?: string
+  ) {
     if (overlap.isEmpty) {
       return undefined;
     }
     source.missingOut.withoutUpdate(overlap);
     target.missingIn.withoutUpdate(overlap);
-    lookup.set(`link:${source.id}-${target.id}`, overlap);
+    const linkId = id ?? `${source.id}/${target.id}`;
+    lookup.set(`link:${linkId}`, overlap);
     const l: SankeyInternalLink = {
-      id: `${source.id}-${target.id}`,
+      id: linkId,
       name: `${source.name} → ${target.name}`,
       value: overlap.size,
       overlap,
@@ -182,7 +189,7 @@ export function extractGraph(data: {
       const source = lookupNode.get(link.source)!;
       const target = lookupNode.get(link.target)!;
       const overlap = link.ids ? new OverlapHelper(link.ids) : source.overlap.intersect(target.overlap);
-      asLink(source, target, overlap);
+      asLink(source, target, overlap, link.id);
     }
   }
   const layers = extractLayers(nodes, data.layers);

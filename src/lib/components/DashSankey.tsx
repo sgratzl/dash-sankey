@@ -260,7 +260,13 @@ DashSankey.propTypes = {
       ).isRequired,
     }).isRequired
   ),
+  /**
+   * nodes data as an alternative to layers
+   */
   nodes: NODE_ARR as React.Validator<readonly SankeyNode[]> | undefined,
+  /**
+   * link data as an alternative to layers
+   */
   links: LINK_ARR as React.Validator<readonly SankeyLink[]> | undefined,
 
   /**

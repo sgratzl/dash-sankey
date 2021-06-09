@@ -15,7 +15,7 @@
   "license": "Apache-2.0",
   "main": "build/index.js",
   "scripts": {
-    "clean": "rimraf dist build .eggs src/**/*.js src/**/*.map src/*.jl R/ DESCRIPTION NAMESPACE Project.toml .Rbuildignore MANIFEST.in man inst deps dash_sankey/*.js dash_sankey/*.json dash_sankey/Dash*.py dash_sankey/__pycache__ dash_sankey.egg*",
+    "clean": "rimraf dist build .eggs src/**/*.js src/**/*.map src/*.jl R/ DESCRIPTION NAMESPACE Project.toml .Rbuildignore man inst deps dash_sankey/*.js dash_sankey/*.json dash_sankey/Dash*.py dash_sankey/__pycache__ dash_sankey.egg*",
     "compile": "tsc -p tsconfig.json",
     "clean:compile": "rimraf src/**/*.js src/**/*.map",
     "start": "webpack-dev-server --config webpack.serve.config.js --mode development --hot",

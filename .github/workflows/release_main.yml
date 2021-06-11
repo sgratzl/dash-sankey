@@ -81,7 +81,7 @@ jobs:
           . venv/bin/activate
           python setup.py sdist bdist_wheel
           mv dist/dash_sankey*.tar.gz dist/dash_sankey.tar.gz
-          mv dist/dash_sankey*-py3-none-any.whl dash_sankey-py3-none-any.whl
+          mv dist/dash_sankey*-py3-none-any.whl dist/dash_sankey-py3-none-any.whl
       - name: Upload Release Asset
         uses: AButler/upload-release-assets@v2.0
         with:

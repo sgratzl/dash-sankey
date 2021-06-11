@@ -54,16 +54,3 @@ jobs:
         with:
           name: dash_sankey-py3-none-any.whl
           path: dist/dash_sankey*-py3-none-any.whl
-      - name: Create binaries
-        run: |
-          mkdir -p binaries/src
-          cp -r dash_sankey deps inst man R .Rbuildignore DESCRIPTION NAMESPACE Project.toml setup.py package.json ./binaries/
-          cp -r src/*.jl ./binaries/src/
-      - name: Deploy to binaries branch
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./binaries
-          publish_branch: binaries
-          force_orphan: true

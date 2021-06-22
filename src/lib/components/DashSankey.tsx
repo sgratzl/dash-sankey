@@ -12,6 +12,7 @@ import {
   SankeySelection,
   SankeyLink,
   SankeyNode,
+  SankeyExtraSelection,
 } from '../internal/sankey/model';
 import SankeyLayerC from '../internal/sankey/SankeyLayer';
 import SankeyLinkC from '../internal/sankey/SankeyLink';
@@ -19,7 +20,14 @@ import SankeyMissingInLink from '../internal/sankey/SankeyMissingInLink';
 import SankeyMissingOutLink from '../internal/sankey/SankeyMissingOutLink';
 import SankeyNodeC from '../internal/sankey/SankeyNode';
 
-export type { SankeyID, SankeyLayer, SankeyLink, SankeyNode, SankeySelection } from '../internal/sankey/model';
+export type {
+  SankeyID,
+  SankeyLayer,
+  SankeyLink,
+  SankeyNode,
+  SankeySelection,
+  SankeyExtraSelection,
+} from '../internal/sankey/model';
 
 export interface DashChangeAbleSankeyProps {
   selection?: SankeySelection | readonly SankeyID[];
@@ -43,7 +51,7 @@ export type DashSankeyProps = DashReadOnlyLayoutSankeyProps & {
   nodes?: readonly SankeyNode[];
   links?: readonly SankeyLink[];
 } & DashChangeAbleSankeyProps & {
-    selections?: { color: string; ids: readonly SankeyID[] }[];
+    selections?: SankeyExtraSelection[];
     id?: string;
     setProps?(props: DashChangeAbleSankeyProps): void;
     children?: React.ReactNode;

@@ -31,7 +31,7 @@ const SankeyNode: FC<{
       />
       {selections.others.map((s) => {
         const o = s.overlap.intersect(node.overlap);
-        if (o.isEmpty) {
+        if (o.isEmpty || !s.matchLayer(node.layer ?? 0)) {
           return null;
         }
         return (

@@ -2,7 +2,7 @@
 import React, { FC } from 'react';
 import { classNames } from '../../utils';
 import type { SankeySelections } from './hooks';
-import type { SankeyInternalLink } from './model';
+import type { SankeyInternalLink, SankeyInternalNode } from './model';
 import { pathGen } from './renderUtils';
 
 const SankeyLink: FC<{
@@ -29,7 +29,11 @@ const SankeyLink: FC<{
       </title>
       {selections.others.map((s) => {
         const o = s.overlap.intersect(link.overlap);
-        if (o.isEmpty) {
+        if (
+          o.isEmpty ||
+          (!s.matchLayer((link.source as SankeyInternalNode).layer ?? 0) &&
+            !s.matchLayer((link.target as SankeyInternalNode).layer ?? 0))
+        ) {
           return null;
         }
         return (

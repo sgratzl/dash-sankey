@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { DashChangeAbleSankeyProps, DashSankey, SankeyNode, SankeyLayer, SankeyLink } from '../lib';
 
 const App: React.FC = () => {
@@ -99,10 +99,31 @@ const App: React.FC = () => {
       target: 'C2',
     },
   ];
+  const selections = useMemo(
+    () => [
+      {
+        color: 'red',
+        ids: [9, 10],
+      },
+      {
+        color: 'blue',
+        ids: [1, 4],
+        layers: ['A'],
+      },
+    ],
+    []
+  );
   return (
     <div>
-      <DashSankey layers={levels} setProps={setState} selection={state.selection} />
-      <DashSankey nodes={nodes} links={links} setProps={setState} selection={state.selection} nodeAlign="layer" />
+      <DashSankey layers={levels} setProps={setState} selection={state.selection} selections={selections} />
+      <DashSankey
+        nodes={nodes}
+        links={links}
+        setProps={setState}
+        selection={state.selection}
+        nodeAlign="layer"
+        selections={selections}
+      />
     </div>
   );
 };

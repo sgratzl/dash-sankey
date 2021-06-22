@@ -31,6 +31,12 @@ export interface SankeySelection {
   ids: readonly SankeyID[];
 }
 
+export interface SankeyExtraSelection {
+  color: string;
+  ids: readonly SankeyID[];
+  layers?: readonly SankeyID[];
+}
+
 export const DEFAULT_PADDING: IBox = { left: 5, top: 5, right: 5, bottom: 20 };
 
 export declare interface SankeyInternalNodeExtras extends SankeyNode {

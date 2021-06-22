@@ -38,7 +38,7 @@ const SankeyMissingOutLink: FC<{
       </title>
       {selections.others.map((s) => {
         const o = s.overlap.intersect(node.missingOut);
-        if (o.isEmpty) {
+        if (o.isEmpty || !s.matchLayer(node.layer ?? 0)) {
           return null;
         }
         return (

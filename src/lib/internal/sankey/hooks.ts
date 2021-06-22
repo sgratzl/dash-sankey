@@ -7,9 +7,11 @@ import {
   extractLayers,
   isSelected,
   SankeyID,
+  SankeyInternalLayer,
   SankeyInternalLink,
   SankeyInternalNode,
   SankeySelection,
+  SankeyExtraSelection,
 } from './model';
 
 const DEFAULT_PADDING: IBox = { left: 5, top: 5, right: 5, bottom: 20 };
@@ -127,7 +129,20 @@ export interface SankeySelections {
   onClick(e: React.MouseEvent<HTMLElement | SVGElement>): void;
   onMouseEnter(e: React.MouseEvent<HTMLElement | SVGElement>): void;
   onMouseLeave(e: React.MouseEvent<HTMLElement | SVGElement>): void;
-  others: { overlap: OverlapHelper<SankeyID>; color: string }[];
+  others: { overlap: OverlapHelper<SankeyID>; color: string; matchLayer(layer: number): boolean }[];
+}
+
+function matchLayerHelper(layers: readonly (string | number)[] | undefined, graphLayers: SankeyInternalLayer[]) {
+  if (!layers || layers.length === 0) {
+    return () => true;
+  }
+  const selectedIndices = new Set<number>();
+  graphLayers.forEach((l, i) => {
+    if (layers.includes(l.name) || layers.includes(l.id) || layers.includes(i)) {
+      selectedIndices.add(i);
+    }
+  });
+  return selectedIndices.has.bind(selectedIndices);
 }
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
@@ -139,13 +154,18 @@ export function useSelections(
     setProps = noop,
   }: {
     selection?: SankeySelection | readonly SankeyID[];
-    selections?: { color: string; ids: readonly SankeyID[] }[];
+    selections?: SankeyExtraSelection[];
     setProps?(props: { selection?: SankeySelection | readonly SankeyID[] }): void;
   }
 ) {
   const selectionsOverlaps = useMemo(
-    () => (selections ?? []).map((s) => ({ ...s, overlap: new OverlapHelper(s.ids) })),
-    [selections]
+    () =>
+      (selections ?? []).map((s) => ({
+        ...s,
+        overlap: new OverlapHelper(s.ids),
+        matchLayer: matchLayerHelper(s.layers, graph.layers),
+      })),
+    [selections, graph.layers]
   );
 
   const resetSelection = useCallback(() => {

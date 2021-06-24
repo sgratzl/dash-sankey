@@ -1,32 +1,31 @@
+/* eslint-disable react/jsx-props-no-spreading */
 /* eslint-disable react/destructuring-assignment */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import PropTypes from 'prop-types';
-import React, { FC, Fragment } from 'react';
-import { PADDING_PROP_TYPES } from '../utils';
-import './DashSankey.css';
-import { SankeyLayoutOptions, useSankeyLayout, useSelections } from '../internal/sankey/hooks';
+import React, { FC, useCallback, useMemo } from 'react';
+import useResizeObserver from 'use-resize-observer';
+import DashSankeyImpl from '../internal/sankey/DashSankeyImpl';
+import type { SankeyLayoutOptions } from '../internal/sankey/hooks';
 import {
   DEFAULT_PADDING,
+  SankeyExtraSelection,
   SankeyID,
   SankeyLayer,
-  SankeySelection,
   SankeyLink,
   SankeyNode,
-  SankeyExtraSelection,
+  SankeySelection,
 } from '../internal/sankey/model';
-import SankeyLayerC from '../internal/sankey/SankeyLayer';
-import SankeyLinkC from '../internal/sankey/SankeyLink';
-import SankeyMissingInLink from '../internal/sankey/SankeyMissingInLink';
-import SankeyMissingOutLink from '../internal/sankey/SankeyMissingOutLink';
-import SankeyNodeC from '../internal/sankey/SankeyNode';
+import { ID_ARRAY, LINK_ARR, NODE_ARR, SELECTION_PROP_TYPE } from '../internal/sankey/propTypes';
+import { deriveBox, PADDING_PROP_TYPES } from '../utils';
+import './DashSankey.css';
 
 export type {
+  SankeyExtraSelection,
   SankeyID,
   SankeyLayer,
   SankeyLink,
   SankeyNode,
   SankeySelection,
-  SankeyExtraSelection,
 } from '../internal/sankey/model';
 
 export interface DashChangeAbleSankeyProps {
@@ -61,74 +60,22 @@ export type DashSankeyProps = DashReadOnlyLayoutSankeyProps & {
  * DashSankey shows an interactive parallel set / sankey diagram
  */
 const DashSankey: FC<DashSankeyProps> = (props) => {
-  const { id, lineOffset = 5, children, layers, nodes, links, showLayers = true } = props;
+  const { id, children, height = 300, setProps } = props;
 
-  const { ref, width, height, layoutGraph, maxLayerY1, nodeWidth, graph } = useSankeyLayout(
-    { layers, nodes, links },
-    {
-      height: props.height,
-      iterations: props.iterations,
-      nodeAlign: props.nodeAlign,
-      nodePadding: props.nodePadding,
-      nodeSort: props.nodeSort,
-      nodeWidth: props.nodeWidth,
-      padding: props.padding,
+  const resetSelection = useCallback(() => {
+    if (setProps) {
+      setProps({ selection: [] });
     }
-  );
-  const { resetSelection, selections } = useSelections(graph, {
-    selection: props.selection,
-    setProps: props.setProps,
-    selections: props.selections,
-  });
+  }, [setProps]);
+
+  const p = useMemo(() => deriveBox(props.padding ?? DEFAULT_PADDING, DEFAULT_PADDING), [props.padding]);
+  const { ref, width: computedWidth = p.left + p.right + 10 } = useResizeObserver<HTMLDivElement>();
+  const fixedWidth = props.width ?? computedWidth;
 
   return (
     <div ref={ref} id={id}>
-      <svg width={width} height={height} className="dash-sankey" onClick={resetSelection}>
-        <g className="dash-sankey-links">
-          {layoutGraph.links.map((link) => (
-            <SankeyLinkC key={link.id} selections={selections} link={link} lineOffset={lineOffset} />
-          ))}
-          {layoutGraph.nodes.map((node) => (
-            <Fragment key={node.id}>
-              <SankeyMissingInLink selections={selections} node={node} lineOffset={lineOffset} />
-              <SankeyMissingOutLink
-                key={node.id}
-                selections={selections}
-                node={node}
-                nLayers={layoutGraph.layers.length}
-                lineOffset={lineOffset}
-              />
-            </Fragment>
-          ))}
-        </g>
-        {showLayers && (
-          <g className="dash-sankey-layers">
-            {layoutGraph.layers.map((layer, i) => (
-              <SankeyLayerC
-                key={layer.id}
-                selections={selections}
-                layer={layer}
-                maxLayerY1={maxLayerY1}
-                i={i}
-                nLayers={layoutGraph.layers.length}
-                nodeWidth={nodeWidth}
-                lineOffset={lineOffset}
-              />
-            ))}
-          </g>
-        )}
-
-        <g className="dash-sankey-nodes">
-          {layoutGraph.nodes.map((node) => (
-            <SankeyNodeC
-              key={node.id}
-              selections={selections}
-              node={node}
-              nLayers={layoutGraph.layers.length}
-              nodeWidth={nodeWidth}
-            />
-          ))}
-        </g>
+      <svg width={fixedWidth} height={height} className="dash-sankey" onClick={resetSelection}>
+        <DashSankeyImpl width={fixedWidth} height={height} {...props} />
         {children}
       </svg>
     </div>
@@ -138,7 +85,7 @@ const DashSankey: FC<DashSankeyProps> = (props) => {
 DashSankey.defaultProps = {
   id: undefined,
   setProps: undefined,
-
+  width: undefined,
   height: 300,
   padding: DEFAULT_PADDING,
   lineOffset: 5,
@@ -156,35 +103,6 @@ DashSankey.defaultProps = {
   showLayers: true,
 };
 
-const ID_ARRAY = PropTypes.arrayOf(
-  PropTypes.oneOfType([PropTypes.string.isRequired, PropTypes.number.isRequired]).isRequired
-).isRequired;
-
-const NODE_ARR = PropTypes.arrayOf(
-  PropTypes.shape({
-    id: PropTypes.string.isRequired,
-    name: PropTypes.string.isRequired,
-    ids: ID_ARRAY,
-    layer: PropTypes.number,
-  }).isRequired
-);
-const LINK_ARR = PropTypes.arrayOf(
-  PropTypes.shape({
-    source: PropTypes.string.isRequired,
-    target: PropTypes.string.isRequired,
-    ids: PropTypes.arrayOf(PropTypes.oneOfType([PropTypes.string.isRequired, PropTypes.number.isRequired]).isRequired),
-  }).isRequired
-);
-
-const SELECTION_PROP_TYPE = PropTypes.oneOfType([
-  ID_ARRAY,
-  PropTypes.shape({
-    id: PropTypes.string.isRequired,
-    type: PropTypes.oneOf<SankeySelection['type']>(['node', 'link', 'missing_in', 'missing_out', 'layer']).isRequired,
-    ids: ID_ARRAY,
-  }),
-]);
-
 DashSankey.propTypes = {
   /**
    * The ID used to identify this component in Dash callbacks.
@@ -200,6 +118,10 @@ DashSankey.propTypes = {
   children: PropTypes.node,
 
   // layout
+  /**
+   * width of the resulting chart
+   */
+  width: PropTypes.number,
   /**
    * height of the resulting chart
    * @default 300

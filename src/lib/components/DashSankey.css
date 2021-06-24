@@ -36,3 +36,8 @@
 .dash-sankey-layer-name__last {
   text-anchor: end;
 }
+
+.dash-sankey-facet-name {
+  text-anchor: middle;
+  writing-mode: vertical-lr;
+}

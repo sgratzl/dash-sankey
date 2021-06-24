@@ -75,7 +75,7 @@ const DashSankey: FC<DashSankeyProps> = (props) => {
   return (
     <div ref={ref} id={id}>
       <svg width={fixedWidth} height={height} className="dash-sankey" onClick={resetSelection}>
-        <DashSankeyImpl width={fixedWidth} height={height} {...props} />
+        <DashSankeyImpl {...props} width={fixedWidth} height={height} />
         {children}
       </svg>
     </div>

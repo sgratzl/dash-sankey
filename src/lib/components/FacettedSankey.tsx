@@ -94,7 +94,7 @@ const FacettedSankey: FC<FacettedSankeyProps> = (props) => {
             <text x={width - 12} y={facetHeight / 2} className="dash-sankey-facet-name">
               {facet.name}
             </text>
-            <DashSankeyImpl width={width - 16} height={facetHeight} {...props} {...facet} />
+            <DashSankeyImpl {...props} {...facet} width={width - 16} height={facetHeight} />
           </g>
         ))}
         {children}

@@ -31,6 +31,10 @@ export interface SankeySelection {
   ids: readonly SankeyID[];
 }
 
+export interface FacettedSankeySelection extends SankeySelection {
+  facet: string;
+}
+
 export interface SankeyExtraSelection {
   color: string;
   ids: readonly SankeyID[];

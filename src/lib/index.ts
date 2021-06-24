@@ -1,5 +1,6 @@
 /* eslint-disable import/prefer-default-export */
 import DashSankey from './components/DashSankey';
+import FacettedSankey from './components/FacettedSankey';
 
 export type {
   DashChangeAbleSankeyProps,
@@ -12,4 +13,10 @@ export type {
   SankeyNode,
 } from './components/DashSankey';
 
-export { DashSankey };
+export type {
+  FacettedSankeyChangeAbleProps,
+  FacettedSankeyProps,
+  FacettedSankeySelection,
+} from './components/FacettedSankey';
+
+export { DashSankey, FacettedSankey };

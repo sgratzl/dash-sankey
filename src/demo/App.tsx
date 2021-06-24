@@ -1,8 +1,17 @@
 import React, { useMemo, useState } from 'react';
-import { DashChangeAbleSankeyProps, DashSankey, SankeyNode, SankeyLayer, SankeyLink } from '../lib';
+import {
+  DashChangeAbleSankeyProps,
+  DashSankey,
+  SankeyNode,
+  SankeyLayer,
+  SankeyLink,
+  FacettedSankey,
+  FacettedSankeyChangeAbleProps,
+} from '../lib';
 
 const App: React.FC = () => {
   const [state, setState] = useState<DashChangeAbleSankeyProps>({ selection: undefined as string[] | undefined });
+  const [fState, setFState] = useState<FacettedSankeyChangeAbleProps>({ selection: undefined as string[] | undefined });
   const levels: SankeyLayer[] = [
     {
       name: 'A',
@@ -121,6 +130,16 @@ const App: React.FC = () => {
         links={links}
         setProps={setState}
         selection={state.selection}
+        nodeAlign="layer"
+        selections={selections}
+      />
+      <FacettedSankey
+        facets={[
+          { name: 'A', layers: levels },
+          { name: 'B', layers: levels },
+        ]}
+        setProps={setFState}
+        selection={fState.selection}
         nodeAlign="layer"
         selections={selections}
       />

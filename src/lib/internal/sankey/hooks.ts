@@ -1,22 +1,25 @@
-import React, { useCallback, useMemo, useState } from 'react';
-import useResizeObserver from 'use-resize-observer';
 import { sankey, sankeyCenter, sankeyJustify, sankeyLeft, sankeyRight } from 'd3-sankey';
+import React, { useCallback, useMemo, useState } from 'react';
 import { deriveBox, IBox, isArray, noop, OverlapHelper } from '../../utils';
 import {
   extractGraph,
   extractLayers,
   isSelected,
+  SankeyExtraSelection,
   SankeyID,
   SankeyInternalLayer,
   SankeyInternalLink,
   SankeyInternalNode,
   SankeySelection,
-  SankeyExtraSelection,
 } from './model';
 
 const DEFAULT_PADDING: IBox = { left: 5, top: 5, right: 5, bottom: 20 };
 
 export interface SankeyLayoutOptions {
+  /**
+   * @default fit to the width
+   */
+  width?: number;
   /**
    * @default 300
    */
@@ -61,6 +64,7 @@ function alignLayer(node: SankeyInternalNode, n: number) {
 export function useSankeyLayout(
   { layers, nodes, links }: Parameters<typeof extractGraph>[0],
   {
+    width = 500,
     height = 300,
     padding = DEFAULT_PADDING,
     iterations = 6,
@@ -71,7 +75,6 @@ export function useSankeyLayout(
   }: SankeyLayoutOptions
 ) {
   const p = useMemo(() => deriveBox(padding, DEFAULT_PADDING), [padding]);
-  const { ref, width = p.left + p.right + 10 } = useResizeObserver<HTMLDivElement>();
   const sankeyGen = useMemo(() => {
     const s = sankey<SankeyInternalNode, SankeyInternalLink>();
     s.extent([
@@ -118,7 +121,7 @@ export function useSankeyLayout(
 
   const maxLayerY1 = layoutGraph.layers.reduce((acc, v) => Math.max(acc, v.y1), 0);
 
-  return { ref, layoutGraph, graph, width, height, maxLayerY1, nodeWidth };
+  return { layoutGraph, graph, maxLayerY1, nodeWidth };
 }
 
 const EMPTY_ARR: { color: string; ids: readonly SankeyID[] }[] = [];
@@ -168,10 +171,6 @@ export function useSelections(
     [selections, graph.layers]
   );
 
-  const resetSelection = useCallback(() => {
-    setProps({ selection: [] });
-  }, [setProps]);
-
   const selectionOverlap = useMemo(
     () => new OverlapHelper(isArray(selection) ? selection : selection?.ids ?? []),
     [selection]
@@ -219,5 +218,5 @@ export function useSelections(
     [onClick, onMouseEnter, onMouseLeave, hoveredSelection, selectionOverlap, selectionsOverlaps, selection]
   );
 
-  return { selections: selectionContext, resetSelection };
+  return selectionContext;
 }

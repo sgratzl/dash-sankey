@@ -8,8 +8,8 @@ function missingInOffset(node: SankeyInternalNode): number {
   return y1 - y0;
 }
 
-export function pathGen(link: SankeyInternalLink, lineOffset: number, fraction: number): string {
-  const base = -link.width! / 2;
+export function pathGen(link: SankeyInternalLink, lineOffset: number, fraction: number, shift = 0): string {
+  const base = -link.width! / 2 + link.width! * shift;
   const height = link.width! * fraction;
 
   const targetOffset = missingInOffset(link.target as SankeyInternalNode);
@@ -46,11 +46,12 @@ export function pathGen(link: SankeyInternalLink, lineOffset: number, fraction: 
   );
 }
 
-export function missingOutPath(node: SankeyInternalNode, off: number, fraction = 1): string {
+export function missingOutPath(node: SankeyInternalNode, off: number, fraction = 1, shift = 0): string {
   const x = node.x1!;
   const y1 = node.y1!;
-  const y0 = y1 - (y1 - node.y0!) * (node.missingOut.size / node.overlap.size);
+  let y0 = y1 - (y1 - node.y0!) * (node.missingOut.size / node.overlap.size);
   const height = (y1 - y0) * fraction;
+  y0 += (y1 - y0) * shift;
   const width = height;
   const x1 = x + width;
 
@@ -59,11 +60,12 @@ export function missingOutPath(node: SankeyInternalNode, off: number, fraction =
   return `M${x},${y0} ${curve1} ${curve2} Z`;
 }
 
-export function missingInPath(node: SankeyInternalNode, off: number, fraction = 1): string {
+export function missingInPath(node: SankeyInternalNode, off: number, fraction = 1, shift = 0): string {
   const x = node.x0!;
-  const y0 = node.y0!;
+  let y0 = node.y0!;
   const y1 = y0 + (node.y1! - y0) * (node.missingIn.size / node.overlap.size);
   const height = (y1 - y0) * fraction;
+  y0 += (y1 - y0) * shift;
   const width = height;
   const x1 = x - width;
 

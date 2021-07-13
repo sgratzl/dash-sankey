@@ -1,8 +1,8 @@
 /* eslint-disable react/prop-types */
 import React, { FC } from 'react';
-import { classNames } from '../../utils';
+import { classNames, OverlapHelper } from '../../utils';
 import type { SankeySelections } from './hooks';
-import type { SankeyInternalNode } from './model';
+import type { SankeyID, SankeyInternalNode } from './model';
 import { missingOutPath } from './renderUtils';
 
 const SankeyMissingOutLink: FC<{
@@ -17,6 +17,10 @@ const SankeyMissingOutLink: FC<{
     return null;
   }
   const overlap = selections.overlap.intersect(node.missingOut);
+  const total = node.missingOut.size;
+  let selectionShift = 0;
+  let prevOverlap: OverlapHelper<SankeyID> | null = null;
+  const shiftSelections = selections.others.length < 3;
   return (
     <g
       key={node.id}
@@ -37,14 +41,18 @@ const SankeyMissingOutLink: FC<{
         {node.name} → ?: {node.missingOut.length.toLocaleString()}
       </title>
       {selections.others.map((s) => {
+        if (prevOverlap != null && !prevOverlap.isEmpty && shiftSelections) {
+          selectionShift += prevOverlap.without(s.overlap).size;
+        }
         const o = s.overlap.intersect(node.missingOut);
+        prevOverlap = o;
         if (o.isEmpty || !s.matchLayer(node.layer ?? 0)) {
           return null;
         }
         return (
           <path
             key={s.color}
-            d={missingOutPath(node, lineOffset, o.size / node.missingOut.size)}
+            d={missingOutPath(node, lineOffset, o.size / total, selectionShift / total)}
             className="dash-sankey-link dash-sankey-link__missing"
             style={{ fill: s.color }}
           />
@@ -52,7 +60,7 @@ const SankeyMissingOutLink: FC<{
       })}
       {overlap.isNotEmpty && (
         <path
-          d={missingOutPath(node, lineOffset, overlap.size / node.missingOut.size)}
+          d={missingOutPath(node, lineOffset, overlap.size / total)}
           className="dash-sankey-link dash-sankey-link__missing dash-sankey-link__selected"
         />
       )}

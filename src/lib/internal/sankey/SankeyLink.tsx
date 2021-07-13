@@ -1,8 +1,8 @@
 /* eslint-disable react/prop-types */
 import React, { FC } from 'react';
-import { classNames } from '../../utils';
+import { classNames, OverlapHelper } from '../../utils';
 import type { SankeySelections } from './hooks';
-import type { SankeyInternalLink, SankeyInternalNode } from './model';
+import type { SankeyID, SankeyInternalLink, SankeyInternalNode } from './model';
 import { pathGen } from './renderUtils';
 
 const SankeyLink: FC<{
@@ -11,6 +11,10 @@ const SankeyLink: FC<{
   selections: SankeySelections;
 }> = ({ link, lineOffset, selections }) => {
   const overlap = selections.overlap.intersect(link.overlap);
+  const total = link.overlap.size;
+  let selectionShift = 0;
+  let prevOverlap: OverlapHelper<SankeyID> | null = null;
+  const shiftSelections = selections.others.length < 3;
   return (
     <g
       key={link.id}
@@ -28,7 +32,11 @@ const SankeyLink: FC<{
         {link.name}: {link.value.toLocaleString()}
       </title>
       {selections.others.map((s) => {
+        if (prevOverlap != null && !prevOverlap.isEmpty && shiftSelections) {
+          selectionShift += prevOverlap.without(s.overlap).size;
+        }
         const o = s.overlap.intersect(link.overlap);
+        prevOverlap = o;
         if (
           o.isEmpty ||
           (!s.matchLayer((link.source as SankeyInternalNode).layer ?? 0) &&
@@ -39,7 +47,7 @@ const SankeyLink: FC<{
         return (
           <path
             key={s.color}
-            d={pathGen(link, lineOffset, o.size / link.overlap.size)}
+            d={pathGen(link, lineOffset, o.size / total, selectionShift / link.overlap.size)}
             className="dash-sankey-link"
             style={{ fill: s.color }}
           />

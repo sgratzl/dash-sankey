@@ -105,6 +105,12 @@ export class OverlapHelper<T> {
     }
   }
 
+  without(v: OverlapHelper<T>): OverlapHelper<T> {
+    const r = this.copy();
+    r.withoutUpdate(v);
+    return r;
+  }
+
   addUpdate(v: OverlapHelper<T>): void {
     if (this === v || v.isEmpty) {
       return;

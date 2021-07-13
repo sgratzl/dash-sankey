@@ -5,8 +5,12 @@
 }
 
 .dash-sankey-link {
-  opacity: 0.5;
+  opacity: 0.2;
   stroke: none;
+}
+
+.dash-sankey-link.dash-sankey-selection {
+  opacity: 0.5;
 }
 
 .dash-sankey-node-name {
@@ -21,6 +25,7 @@
 .dash-sankey-node__selected,
 .dash-sankey-link:hover,
 .dash-sankey-link__selected {
+  opacity: 0.5;
   fill: orange;
 }
 

@@ -48,7 +48,7 @@ const SankeyNode: FC<{
             y={nodeHeight * (selectionShift / total)}
             width={nodeWidth}
             height={nodeHeight * (o.size / total)}
-            className="dash-sankey-node"
+            className="dash-sankey-node dash-sankey-selection"
             style={{ fill: s.color }}
           />
         );

@@ -48,7 +48,7 @@ const SankeyLink: FC<{
           <path
             key={s.color}
             d={pathGen(link, lineOffset, o.size / total, selectionShift / link.overlap.size)}
-            className="dash-sankey-link"
+            className="dash-sankey-link dash-sankey-selection"
             style={{ fill: s.color }}
           />
         );

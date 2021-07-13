@@ -51,7 +51,7 @@ const SankeyMissingInLink: FC<{
           <path
             key={s.color}
             d={missingInPath(node, lineOffset, o.size / total, selectionShift / total)}
-            className="dash-sankey-link dash-sankey-link__missing"
+            className="dash-sankey-link dash-sankey-link__missing dash-sankey-selection"
             style={{ fill: s.color }}
           />
         );

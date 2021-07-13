@@ -1,8 +1,8 @@
 /* eslint-disable react/prop-types */
 import React, { FC } from 'react';
-import { classNames } from '../../utils';
+import { classNames, OverlapHelper } from '../../utils';
 import type { SankeySelections } from './hooks';
-import type { SankeyInternalNode } from './model';
+import type { SankeyID, SankeyInternalNode } from './model';
 import { missingInPath } from './renderUtils';
 
 const SankeyMissingInLink: FC<{
@@ -15,6 +15,10 @@ const SankeyMissingInLink: FC<{
     return null;
   }
   const overlap = selections.overlap.intersect(node.missingIn);
+  const total = node.missingIn.size;
+  let selectionShift = 0;
+  let prevOverlap: OverlapHelper<SankeyID> | null = null;
+  const shiftSelections = selections.others.length < 3;
   return (
     <g
       key={node.id}
@@ -35,22 +39,26 @@ const SankeyMissingInLink: FC<{
         ? → {node.name}: {node.missingIn.length.toLocaleString()}
       </title>
       {selections.others.map((s) => {
+        if (prevOverlap != null && !prevOverlap.isEmpty && shiftSelections) {
+          selectionShift += prevOverlap.without(s.overlap).size;
+        }
         const o = s.overlap.intersect(node.missingIn);
+        prevOverlap = o;
         if (o.isEmpty || !s.matchLayer(node.layer ?? 0)) {
           return null;
         }
         return (
           <path
             key={s.color}
-            d={missingInPath(node, lineOffset, o.size / node.missingIn.size)}
-            className="dash-sankey-link dash-sankey-link__missing"
+            d={missingInPath(node, lineOffset, o.size / total, selectionShift / total)}
+            className="dash-sankey-link dash-sankey-link__missing dash-sankey-selection"
             style={{ fill: s.color }}
           />
         );
       })}
       {overlap.isNotEmpty && (
         <path
-          d={missingInPath(node, lineOffset, overlap.size / node.missingIn.size)}
+          d={missingInPath(node, lineOffset, overlap.size / total, selectionShift / total)}
           className="dash-sankey-link dash-sankey-link__missing dash-sankey-link__selected"
         />
       )}

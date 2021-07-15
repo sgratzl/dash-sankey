@@ -1,0 +1,480 @@
+{
+  "src/lib/components/DashSankey.js": {
+    "description": "DashSankey shows an interactive parallel set / sankey diagram",
+    "displayName": "DashSankey",
+    "methods": [],
+    "props": {
+      "id": {
+        "type": {
+          "name": "string"
+        },
+        "required": false,
+        "description": "The ID used to identify this component in Dash callbacks.",
+        "defaultValue": {
+          "value": "undefined",
+          "computed": true
+        }
+      },
+      "setProps": {
+        "type": {
+          "name": "func"
+        },
+        "required": false,
+        "description": "set props helper for dash",
+        "defaultValue": {
+          "value": "undefined",
+          "computed": true
+        }
+      },
+      "children": {
+        "type": {
+          "name": "node"
+        },
+        "required": false,
+        "description": "children helper for dash",
+        "defaultValue": {
+          "value": "[]",
+          "computed": false
+        }
+      },
+      "width": {
+        "type": {
+          "name": "number"
+        },
+        "required": false,
+        "description": "width of the resulting chart",
+        "defaultValue": {
+          "value": "undefined",
+          "computed": true
+        }
+      },
+      "height": {
+        "type": {
+          "name": "number"
+        },
+        "required": false,
+        "description": "height of the resulting chart\n@default 300",
+        "defaultValue": {
+          "value": "300",
+          "computed": false
+        }
+      },
+      "padding": {
+        "type": {
+          "name": "custom",
+          "raw": "PADDING_PROP_TYPES"
+        },
+        "required": false,
+        "description": "padding around SVG\n@default 5",
+        "defaultValue": {
+          "value": "DEFAULT_PADDING",
+          "computed": true
+        }
+      },
+      "lineOffset": {
+        "type": {
+          "name": "number"
+        },
+        "required": false,
+        "description": "offset between lines\n@default 5",
+        "defaultValue": {
+          "value": "5",
+          "computed": false
+        }
+      },
+      "showLayers": {
+        "type": {
+          "name": "bool"
+        },
+        "required": false,
+        "description": "show layer names\n@default true",
+        "defaultValue": {
+          "value": "true",
+          "computed": false
+        }
+      },
+      "total": {
+        "type": {
+          "name": "number"
+        },
+        "required": false,
+        "description": "total number of ids to show percentages",
+        "defaultValue": {
+          "value": "undefined",
+          "computed": true
+        }
+      },
+      "iterations": {
+        "type": {
+          "name": "number"
+        },
+        "required": false,
+        "description": "sets the number of relaxation iterations when generating the layout and returns this Sankey generator.\n@default 6",
+        "defaultValue": {
+          "value": "6",
+          "computed": false
+        }
+      },
+      "nodeWidth": {
+        "type": {
+          "name": "number"
+        },
+        "required": false,
+        "description": "sets the node width to the specified number and returns this Sankey generator.\n@default 24",
+        "defaultValue": {
+          "value": "24",
+          "computed": false
+        }
+      },
+      "nodePadding": {
+        "type": {
+          "name": "number"
+        },
+        "required": false,
+        "description": "sets the vertical separation between nodes at each column to the specified number and returns this Sankey generator.\n@default 8",
+        "defaultValue": {
+          "value": "8",
+          "computed": false
+        }
+      },
+      "nodeAlign": {
+        "type": {
+          "name": "enum",
+          "value": [
+            {
+              "value": "'left'",
+              "computed": false
+            },
+            {
+              "value": "'right'",
+              "computed": false
+            },
+            {
+              "value": "'center'",
+              "computed": false
+            },
+            {
+              "value": "'justify'",
+              "computed": false
+            },
+            {
+              "value": "'layer'",
+              "computed": false
+            }
+          ]
+        },
+        "required": false,
+        "description": "justify method\n@default 'justify';",
+        "defaultValue": {
+          "value": "'justify'",
+          "computed": false
+        }
+      },
+      "nodeSort": {
+        "type": {
+          "name": "enum",
+          "value": [
+            {
+              "value": "'auto'",
+              "computed": false
+            },
+            {
+              "value": "'fixed'",
+              "computed": false
+            }
+          ]
+        },
+        "required": false,
+        "description": "node sort order\n@default 'auto'",
+        "defaultValue": {
+          "value": "'auto'",
+          "computed": false
+        }
+      },
+      "layers": {
+        "type": {
+          "name": "arrayOf",
+          "value": {
+            "name": "shape",
+            "value": {
+              "name": {
+                "name": "string",
+                "required": true
+              },
+              "nodes": {
+                "name": "arrayOf",
+                "value": {
+                  "name": "shape",
+                  "value": {
+                    "id": {
+                      "name": "string",
+                      "required": true
+                    },
+                    "name": {
+                      "name": "string",
+                      "required": true
+                    },
+                    "ids": {
+                      "name": "custom",
+                      "raw": "ID_ARRAY",
+                      "required": false
+                    }
+                  }
+                },
+                "required": true
+              }
+            }
+          }
+        },
+        "required": false,
+        "description": "level sankey data",
+        "defaultValue": {
+          "value": "undefined",
+          "computed": true
+        }
+      },
+      "nodes": {
+        "type": {
+          "name": "custom",
+          "raw": "NODE_ARR"
+        },
+        "required": false,
+        "description": "nodes data as an alternative to layers",
+        "defaultValue": {
+          "value": "undefined",
+          "computed": true
+        }
+      },
+      "links": {
+        "type": {
+          "name": "custom",
+          "raw": "LINK_ARR"
+        },
+        "required": false,
+        "description": "link data as an alternative to layers",
+        "defaultValue": {
+          "value": "undefined",
+          "computed": true
+        }
+      },
+      "selection": {
+        "type": {
+          "name": "custom",
+          "raw": "SELECTION_PROP_TYPE"
+        },
+        "required": false,
+        "description": "the selection to highlight",
+        "defaultValue": {
+          "value": "undefined",
+          "computed": true
+        }
+      },
+      "selections": {
+        "type": {
+          "name": "arrayOf",
+          "value": {
+            "name": "shape",
+            "value": {
+              "color": {
+                "name": "string",
+                "required": true
+              },
+              "ids": {
+                "name": "custom",
+                "raw": "ID_ARRAY",
+                "required": false
+              }
+            }
+          }
+        },
+        "required": false,
+        "description": "additional selections to highlight in their given color",
+        "defaultValue": {
+          "value": "undefined",
+          "computed": true
+        }
+      }
+    }
+  },
+  "src/lib/components/FacettedSankey.js": {
+    "description": "FacettedSankey shows an interactive parallel set / sankey diagram",
+    "displayName": "FacettedSankey",
+    "methods": [],
+    "props": {
+      "id": {
+        "type": {
+          "name": "string"
+        },
+        "required": false,
+        "description": "The ID used to identify this component in Dash callbacks."
+      },
+      "setProps": {
+        "type": {
+          "name": "func"
+        },
+        "required": false,
+        "description": "set props helper for dash"
+      },
+      "children": {
+        "type": {
+          "name": "node"
+        },
+        "required": false,
+        "description": "children helper for dash"
+      },
+      "width": {
+        "type": {
+          "name": "number"
+        },
+        "required": false,
+        "description": "width of the resulting chart"
+      },
+      "height": {
+        "type": {
+          "name": "number"
+        },
+        "required": false,
+        "description": "height of the resulting chart\n@default 300"
+      },
+      "padding": {
+        "type": {
+          "name": "custom",
+          "raw": "PADDING_PROP_TYPES"
+        },
+        "required": false,
+        "description": "padding around SVG\n@default 5"
+      },
+      "lineOffset": {
+        "type": {
+          "name": "number"
+        },
+        "required": false,
+        "description": "offset between lines\n@default 5"
+      },
+      "showLayers": {
+        "type": {
+          "name": "bool"
+        },
+        "required": false,
+        "description": "show layer names\n@default true"
+      },
+      "iterations": {
+        "type": {
+          "name": "number"
+        },
+        "required": false,
+        "description": "sets the number of relaxation iterations when generating the layout and returns this Sankey generator.\n@default 6"
+      },
+      "nodeWidth": {
+        "type": {
+          "name": "number"
+        },
+        "required": false,
+        "description": "sets the node width to the specified number and returns this Sankey generator.\n@default 24"
+      },
+      "nodePadding": {
+        "type": {
+          "name": "number"
+        },
+        "required": false,
+        "description": "sets the vertical separation between nodes at each column to the specified number and returns this Sankey generator.\n@default 8"
+      },
+      "nodeAlign": {
+        "type": {
+          "name": "custom",
+          "raw": "DashSankey.propTypes.nodeAlign"
+        },
+        "required": false,
+        "description": "justify method\n@default 'justify';"
+      },
+      "nodeSort": {
+        "type": {
+          "name": "custom",
+          "raw": "DashSankey.propTypes.nodeSort"
+        },
+        "required": false,
+        "description": "node sort order\n@default 'auto'"
+      },
+      "selection": {
+        "type": {
+          "name": "custom",
+          "raw": "SELECTION_PROP_TYPE"
+        },
+        "required": false,
+        "description": "the selection to highlight"
+      },
+      "selections": {
+        "type": {
+          "name": "custom",
+          "raw": "DashSankey.propTypes.selections"
+        },
+        "required": false,
+        "description": "additional selections to highlight in their given color"
+      },
+      "facets": {
+        "type": {
+          "name": "arrayOf",
+          "value": {
+            "name": "shape",
+            "value": {
+              "name": {
+                "name": "string",
+                "required": true
+              },
+              "layers": {
+                "name": "arrayOf",
+                "value": {
+                  "name": "shape",
+                  "value": {
+                    "name": {
+                      "name": "string",
+                      "required": true
+                    },
+                    "nodes": {
+                      "name": "arrayOf",
+                      "value": {
+                        "name": "shape",
+                        "value": {
+                          "id": {
+                            "name": "string",
+                            "required": true
+                          },
+                          "name": {
+                            "name": "string",
+                            "required": true
+                          },
+                          "ids": {
+                            "name": "custom",
+                            "raw": "ID_ARRAY",
+                            "required": false
+                          }
+                        }
+                      },
+                      "required": true
+                    }
+                  }
+                },
+                "description": "level sankey data",
+                "required": true
+              },
+              "nodes": {
+                "name": "custom",
+                "raw": "NODE_ARR",
+                "description": "nodes data as an alternative to layers",
+                "required": false
+              },
+              "links": {
+                "name": "custom",
+                "raw": "LINK_ARR",
+                "description": "link data as an alternative to layers",
+                "required": false
+              }
+            }
+          }
+        },
+        "required": true,
+        "description": "the facets sankey to render"
+      }
+    }
+  }
+}

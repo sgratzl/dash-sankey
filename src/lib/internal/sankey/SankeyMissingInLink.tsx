@@ -3,13 +3,14 @@ import React, { FC } from 'react';
 import { classNames, OverlapHelper } from '../../utils';
 import type { SankeySelections } from './hooks';
 import type { SankeyID, SankeyInternalNode } from './model';
-import { missingInPath } from './renderUtils';
+import { missingInPath, toValue } from './renderUtils';
 
 const SankeyMissingInLink: FC<{
   node: SankeyInternalNode;
   selections: SankeySelections;
   lineOffset: number;
-}> = ({ node, selections, lineOffset }) => {
+  total?: number;
+}> = ({ node, selections, lineOffset, total: allIds }) => {
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   if (node.missingIn.isEmpty || node.layer! <= 0) {
     return null;
@@ -36,7 +37,7 @@ const SankeyMissingInLink: FC<{
         )}
       />
       <title>
-        ? → {node.name}: {node.missingIn.length.toLocaleString()}
+        ? → {node.name}: {toValue(node.missingIn.length, allIds)}
       </title>
       {selections.others.map((s) => {
         if (prevOverlap != null && !prevOverlap.isEmpty && shiftSelections) {

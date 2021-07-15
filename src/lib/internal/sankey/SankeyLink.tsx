@@ -3,13 +3,14 @@ import React, { FC } from 'react';
 import { classNames, OverlapHelper } from '../../utils';
 import type { SankeySelections } from './hooks';
 import type { SankeyID, SankeyInternalLink, SankeyInternalNode } from './model';
-import { pathGen } from './renderUtils';
+import { pathGen, toValue } from './renderUtils';
 
 const SankeyLink: FC<{
   link: SankeyInternalLink;
   lineOffset: number;
   selections: SankeySelections;
-}> = ({ link, lineOffset, selections }) => {
+  total?: number;
+}> = ({ link, lineOffset, selections, total: allIds }) => {
   const overlap = selections.overlap.intersect(link.overlap);
   const total = link.overlap.size;
   let selectionShift = 0;
@@ -29,7 +30,7 @@ const SankeyLink: FC<{
         className={classNames('dash-sankey-link', selections.isSelected('link', link.id) && 'dash-sankey-link__picked')}
       />
       <title>
-        {link.name}: {link.value.toLocaleString()}
+        {link.name}: {toValue(link.value, allIds)}
       </title>
       {selections.others.map((s) => {
         if (prevOverlap != null && !prevOverlap.isEmpty && shiftSelections) {

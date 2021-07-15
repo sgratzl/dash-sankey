@@ -124,7 +124,7 @@ const App: React.FC = () => {
   );
   return (
     <div>
-      <DashSankey layers={levels} setProps={setState} selection={state.selection} selections={selections} />
+      <DashSankey layers={levels} setProps={setState} selection={state.selection} selections={selections} total={6} />
       {/* <DashSankey
         nodes={nodes}
         links={links}

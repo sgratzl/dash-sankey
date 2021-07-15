@@ -73,3 +73,19 @@ export function missingInPath(node: SankeyInternalNode, off: number, fraction = 
   const curve2 = `L${x - off},${y0 - off} C${x - off},${y0 - off * 0.5} ${x + off * 0.5},${y0} ${x},${y0}`;
   return `M${x},${y1} ${curve1} ${curve2} Z`;
 }
+
+export function toValue(value: number, total?: number): string {
+  if (total == null) {
+    return value.toLocaleString();
+  }
+  const percentage = Math.round((value * 1000) / total) / 10;
+  return `${percentage.toLocaleString()}% (${value.toLocaleString()}/${total.toLocaleString()})`;
+}
+
+export function toPercentageSuffix(value: number, total?: number): string {
+  if (total == null) {
+    return '';
+  }
+  const percentage = Math.round((value * 1000) / total) / 10;
+  return ` (${percentage.toLocaleString()}%)`;
+}

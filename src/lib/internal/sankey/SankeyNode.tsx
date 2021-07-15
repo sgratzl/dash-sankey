@@ -4,13 +4,15 @@ import React, { FC } from 'react';
 import { classNames, OverlapHelper } from '../../utils';
 import type { SankeyID, SankeyInternalNode } from './model';
 import type { SankeySelections } from './hooks';
+import { toPercentageSuffix, toValue } from './renderUtils';
 
 const SankeyNode: FC<{
   node: SankeyInternalNode;
   selections: SankeySelections;
   nodeWidth: number;
   nLayers: number;
-}> = ({ node, selections, nodeWidth, nLayers }) => {
+  total?: number;
+}> = ({ node, selections, nodeWidth, nLayers, total: allIds }) => {
   const overlap = selections.overlap.intersect(node.overlap);
   const nodeHeight = node.y1! - node.y0!;
   const isLastLayer = node.layer! >= nLayers - 1;
@@ -67,9 +69,10 @@ const SankeyNode: FC<{
         className={classNames('dash-sankey-node-name', isLastLayer && 'dash-sankey-node-name__last')}
       >
         {node.name}
+        {toPercentageSuffix(node.value!, allIds)}
       </text>
       <title>
-        {node.name}: {node.value!.toLocaleString()}
+        {node.name}: {toValue(node.value!, allIds)}
       </title>
     </g>
   );

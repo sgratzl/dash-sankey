@@ -34,6 +34,7 @@ export type FacettedSankeyProps = DashReadOnlyLayoutSankeyProps & {
     layers?: readonly SankeyLayer[];
     nodes?: readonly SankeyNode[];
     links?: readonly SankeyLink[];
+    total?: number;
   }[];
 } & FacettedSankeyChangeAbleProps & {
     selections?: SankeyExtraSelection[];

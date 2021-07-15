@@ -3,6 +3,7 @@ import React, { FC } from 'react';
 import { classNames } from '../../utils';
 import type { SankeyInternalLayer } from './model';
 import type { SankeySelections } from './hooks';
+import { toValue } from './renderUtils';
 
 const SankeyLayer: FC<{
   i: number;
@@ -12,7 +13,8 @@ const SankeyLayer: FC<{
   nLayers: number;
   selections: SankeySelections;
   lineOffset: number;
-}> = ({ layer, i, lineOffset, maxLayerY1, nLayers, nodeWidth, selections }) => {
+  total?: number;
+}> = ({ layer, i, lineOffset, maxLayerY1, nLayers, nodeWidth, selections, total }) => {
   const layerHeight = maxLayerY1 - layer.y0;
   let x = i > 0 ? nodeWidth / 2 : 0;
   if (i === nLayers - 1) {
@@ -42,7 +44,7 @@ const SankeyLayer: FC<{
         {layer.name}
       </text>
       <title>
-        {layer.name}: {layer.overlap.length.toLocaleString()}
+        {layer.name}: {toValue(layer.overlap.length, total)}
       </title>
     </g>
   );

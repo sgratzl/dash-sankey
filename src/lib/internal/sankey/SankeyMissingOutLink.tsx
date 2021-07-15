@@ -3,14 +3,15 @@ import React, { FC } from 'react';
 import { classNames, OverlapHelper } from '../../utils';
 import type { SankeySelections } from './hooks';
 import type { SankeyID, SankeyInternalNode } from './model';
-import { missingOutPath } from './renderUtils';
+import { missingOutPath, toValue } from './renderUtils';
 
 const SankeyMissingOutLink: FC<{
   node: SankeyInternalNode;
   nLayers: number;
   selections: SankeySelections;
   lineOffset: number;
-}> = ({ node, nLayers, selections, lineOffset }) => {
+  total?: number;
+}> = ({ node, nLayers, selections, lineOffset, total: allIds }) => {
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const isLastLayer = node.layer! >= nLayers - 1;
   if (node.missingOut.isEmpty || isLastLayer) {
@@ -38,7 +39,7 @@ const SankeyMissingOutLink: FC<{
         )}
       />
       <title>
-        {node.name} → ?: {node.missingOut.length.toLocaleString()}
+        {node.name} → ?: {toValue(node.missingOut.length, allIds)}
       </title>
       {selections.others.map((s) => {
         if (prevOverlap != null && !prevOverlap.isEmpty && shiftSelections) {

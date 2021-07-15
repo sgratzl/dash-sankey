@@ -44,7 +44,13 @@ export interface DashReadOnlyLayoutSankeyProps extends SankeyLayoutOptions {
    * @default true
    */
   showLayers?: boolean;
+
+  /**
+   * total number of ids to show percentages
+   */
+  total?: number;
 }
+
 export type DashSankeyProps = DashReadOnlyLayoutSankeyProps & {
   layers?: readonly SankeyLayer[];
   nodes?: readonly SankeyNode[];
@@ -101,6 +107,7 @@ DashSankey.defaultProps = {
   nodes: undefined,
   links: undefined,
   showLayers: true,
+  total: undefined,
 };
 
 DashSankey.propTypes = {
@@ -143,6 +150,11 @@ DashSankey.propTypes = {
    * @default true
    */
   showLayers: PropTypes.bool,
+
+  /**
+   * total number of ids to show percentages
+   */
+  total: PropTypes.number,
   /**
    * sets the number of relaxation iterations when generating the layout and returns this Sankey generator.
    * @default 6

@@ -21,6 +21,9 @@ export interface DashSankeyImplProps extends SankeyLayoutOptions {
    * @default true
    */
   showLayers?: boolean;
+
+  total?: number;
+
   width: number;
   height: number;
 
@@ -35,7 +38,7 @@ export interface DashSankeyImplProps extends SankeyLayoutOptions {
 }
 
 const DashSankeyImpl: FC<DashSankeyImplProps> = (props) => {
-  const { lineOffset = 5, layers, nodes, links, showLayers = true } = props;
+  const { lineOffset = 5, layers, nodes, links, showLayers = true, total } = props;
 
   const { layoutGraph, maxLayerY1, nodeWidth, graph } = useSankeyLayout(
     { layers, nodes, links },
@@ -60,17 +63,18 @@ const DashSankeyImpl: FC<DashSankeyImplProps> = (props) => {
     <>
       <g className="dash-sankey-links">
         {layoutGraph.links.map((link) => (
-          <SankeyLinkC key={link.id} selections={selections} link={link} lineOffset={lineOffset} />
+          <SankeyLinkC key={link.id} selections={selections} link={link} lineOffset={lineOffset} total={total} />
         ))}
         {layoutGraph.nodes.map((node) => (
           <Fragment key={node.id}>
-            <SankeyMissingInLink selections={selections} node={node} lineOffset={lineOffset} />
+            <SankeyMissingInLink selections={selections} node={node} lineOffset={lineOffset} total={total} />
             <SankeyMissingOutLink
               key={node.id}
               selections={selections}
               node={node}
               nLayers={layoutGraph.layers.length}
               lineOffset={lineOffset}
+              total={total}
             />
           </Fragment>
         ))}
@@ -87,6 +91,7 @@ const DashSankeyImpl: FC<DashSankeyImplProps> = (props) => {
               nLayers={layoutGraph.layers.length}
               nodeWidth={nodeWidth}
               lineOffset={lineOffset}
+              total={total}
             />
           ))}
         </g>
@@ -99,6 +104,7 @@ const DashSankeyImpl: FC<DashSankeyImplProps> = (props) => {
             node={node}
             nLayers={layoutGraph.layers.length}
             nodeWidth={nodeWidth}
+            total={total}
           />
         ))}
       </g>

@@ -1,6 +1,6 @@
 {
   "name": "dash_sankey",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "private": true,
   "description": "Advanced Sankey Diagram for Dash",
   "repository": {

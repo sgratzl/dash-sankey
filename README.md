@@ -2,6 +2,11 @@
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
+Dash Sankey is a [Plot.ly Dash](https://dash.plotly.com) extension for rendering interactive sankey diagrams.
+
+![image](https://user-images.githubusercontent.com/4129778/129817320-9aed0e9e-3295-40d2-bcb7-b57fedf38d46.png)
+
+
 ## Usage
 
 ### Python
